@@ -1,0 +1,82 @@
+# 하루 2번, 대기열(instagram/queue)에서 가장 오래된 게시물 하나를 인스타그램에 올린다.
+name: 인스타 자동 게시
+
+on:
+  schedule:
+    - cron: "10 23 * * *"   # 한국 시간 오전 8:10
+    - cron: "10 10 * * *"   # 한국 시간 오후 7:10
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "시험만 하기 (실제로 올리지 않음)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: instagram-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 다음 게시물 찾기
+        id: next
+        env:
+          HAS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN != '' }}
+          PAUSED: ${{ vars.IG_PAUSED }}
+        run: |
+          if [ "$HAS_TOKEN" != "true" ]; then echo "IG_ACCESS_TOKEN 시크릿이 아직 없어요. 건너뜁니다."; echo "name=" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$PAUSED" = "1" ]; then echo "IG_PAUSED=1 이라 일시 정지 중이에요."; echo "name=" >> "$GITHUB_OUTPUT"; exit 0; fi
+          NEXT=$(ls -1 instagram/queue 2>/dev/null | sort | head -n 1 || true)
+          echo "name=$NEXT" >> "$GITHUB_OUTPUT"
+          if [ -z "$NEXT" ]; then echo "대기열이 비어 있어요."; fi
+
+      # 이미지는 인스타그램이 가져갈 수 있게 공개 주소에 있어야 한다.
+      # 이 저장소가 비공개라면 IMAGE_REPO(공개 저장소, 예: 내계정/insta-images)에 복사한 뒤 그 주소를 쓴다.
+      - name: 이미지 공개 주소 준비
+        if: steps.next.outputs.name != ''
+        env:
+          IMAGE_REPO: ${{ vars.IMAGE_REPO }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          NEXT: ${{ steps.next.outputs.name }}
+        run: |
+          if [ -z "$IMAGE_REPO" ] || [ "$IMAGE_REPO" = "$GITHUB_REPOSITORY" ]; then
+            echo "IMAGE_BASE_URL=https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          if [ -z "$GH_PAT" ]; then echo "IMAGE_REPO를 쓰려면 GH_PAT 시크릿이 필요해요."; exit 1; fi
+          git clone --depth 1 "https://x-access-token:${GH_PAT}@github.com/${IMAGE_REPO}.git" /tmp/images
+          mkdir -p "/tmp/images/instagram/queue/$NEXT"
+          cp instagram/queue/"$NEXT"/*.jpg "/tmp/images/instagram/queue/$NEXT/"
+          cd /tmp/images
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "이미지: $NEXT"
+          git push
+          echo "IMAGE_BASE_URL=https://raw.githubusercontent.com/$IMAGE_REPO/$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          sleep 10
+
+      - name: 인스타그램에 올리기
+        if: steps.next.outputs.name != ''
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
+        run: python3 instagram/publish.py publish
+
+      - name: 올린 게시물을 posted 폴더로 기록
+        if: steps.next.outputs.name != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A instagram
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "인스타 게시 완료: ${{ steps.next.outputs.name }}"
+          git pull --rebase
+          git push

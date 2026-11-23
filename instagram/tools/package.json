@@ -1,0 +1,9 @@
+{
+  "name": "insta-tools",
+  "private": true,
+  "type": "module",
+  "description": "단순한 새우 인스타 카드 이미지 만들기",
+  "dependencies": {
+    "@fontsource/noto-sans-kr": "^5.2.0"
+  }
+}
