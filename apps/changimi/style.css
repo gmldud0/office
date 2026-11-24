@@ -18,7 +18,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:18px 0 10px;
   position:sticky;top:0;background:var(--bg);z-index:5}
 .topbar h1{margin:0;font-size:24px}
-#detail .topbar{justify-content:flex-start}
+#detail .topbar,#archive .topbar{justify-content:flex-start}
 #detail .topbar h1{font-size:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .icon-btn{min-width:44px;min-height:44px;border:0;border-radius:14px;background:var(--card);font-size:20px;
   box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -128,3 +128,19 @@ button{font:inherit;color:inherit;cursor:pointer}
 .toast{position:absolute;left:50%;bottom:90px;transform:translate(-50%,20px);background:rgba(30,30,40,.92);color:#fff;
   padding:12px 18px;border-radius:22px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:20;white-space:nowrap}
 .toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* 템플릿·보관함·설정 (v0.2) */
+.hint{margin:0 0 14px;font-size:14px;line-height:1.5;color:var(--sub)}
+.section-title{margin:22px 0 8px;font-size:14px;font-weight:700;color:var(--sub)}
+.set-card{display:flex;flex-direction:column;gap:10px;padding:16px;background:var(--card);border-radius:18px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.set-line{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:32px;font-size:15px}
+.set-line b{font-weight:700}
+.set-msg{margin:0;font-size:13px;line-height:1.5;color:var(--c-all)}
+.set-msg:empty{display:none}
+.set-note{margin:0;font-size:13px;line-height:1.5;color:var(--sub)}
+.ghost-btn{min-height:48px;padding:0 16px;border:1.5px solid var(--line);border-radius:14px;background:var(--bg);font-weight:700;font-size:15px;text-align:center}
+.ghost-btn:hover{border-color:#cfcabf}
+.ghost-btn.small{min-height:44px;padding:0 14px;font-size:14px}
+.ghost-btn.danger{color:#a63d1c;border-color:#f1d2c8;background:#fff7f4}
+.card-actions{display:flex;gap:8px;margin-top:12px}
+.card-actions .ghost-btn{flex:1}

@@ -18,12 +18,17 @@ const $ = (id) => document.getElementById(id);
 function mk(texts, doneCount, group) {
   return texts.map((t, i) => ({ text: t, done: i < doneCount, group: group ? group(i) : '' }));
 }
+function sampleRemind() { // 내일 오전 7:30에 울리는 실제 알림
+  const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(7, 30, 0, 0);
+  const at = d.getTime();
+  return { remindOn: true, remindAt: at, notified: false, alarm: fmtRemind(at) };
+}
 function sample() {
   const now = Date.now();
   const trip = ['여권(신분증)', '항공권', '숙소 예약 확인', '옷 2벌', '속옷·양말', '세면도구', '선크림',
     '휴대폰 충전기', '보조배터리', '이어폰', '카메라', '우산'];
   return [
-    { id: 'a1', name: '제주 1박 2일 짐', kind: '여행', created: now - 1000, alarm: '내일 07:30',
+    { id: 'a1', name: '제주 1박 2일 짐', kind: '여행', created: now - 1000, ...sampleRemind(),
       items: mk(trip, 3, (i) => (i < 3 ? '서류' : i < 7 ? '생활' : '전자기기')) },
     { id: 'a2', name: '이번 주 장보기', kind: '장보기', created: now - 2000, alarm: '',
       items: mk(['우유', '계란', '두부', '대파', '사과'], 5) },
@@ -71,7 +76,25 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
 }
-const soon = () => toast('이 화면은 다음 단계에서 만들어요.');
+// ---------- 화면 전환 ----------
+const SCREENS = ['home', 'detail', 'create', 'templates', 'archive', 'settings'];
+const TAB_SCREENS = ['home', 'templates', 'settings'];
+function showScreen(name) {
+  SCREENS.forEach((id) => { $(id).hidden = id !== name; });
+  $('tabbar').hidden = !TAB_SCREENS.includes(name);
+  document.querySelectorAll('#tabbar .tab').forEach((t) => {
+    const on = t.dataset.tab === name;
+    t.classList.toggle('active', on);
+    if (on) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+  });
+  $(name).scrollTop = 0;
+}
+function goTab(name) {
+  closeMenu(false);
+  if (name === 'home') { showScreen('home'); renderHome(); }
+  if (name === 'templates') { showScreen('templates'); renderTemplates(); }
+  if (name === 'settings') { showScreen('settings'); renderSettings(); }
+}
 
 // ---------- 알림(리마인더) 유틸 ----------
 // 필드: remindOn(boolean), remindAt(ms | null), notified(false | 발송 시각 ms | -1=조용히 처리)
@@ -149,7 +172,18 @@ function renderHome() {
     box.appendChild(w);
     return;
   }
-  const shown = lists.filter((l) => filter === '전체' || l.kind === filter)
+  const active = lists.filter((l) => !l.archived);
+  if (active.length === 0) {
+    const w = el('div', 'empty');
+    w.appendChild(el('p', '', '진행 중인 리스트가 없어요. 보관함에 ' + (lists.length) + '개가 있어요.'));
+    const b = el('button', 'primary', '새 리스트 만들기');
+    b.type = 'button';
+    b.addEventListener('click', openCreate);
+    w.appendChild(b);
+    box.appendChild(w);
+    return;
+  }
+  const shown = active.filter((l) => filter === '전체' || l.kind === filter)
     .sort((a, b) => b.created - a.created); // 최근 만든 순
   if (shown.length === 0) {
     box.appendChild(el('div', 'empty', '이 종류의 리스트가 아직 없어요.'));
@@ -173,7 +207,7 @@ function renderHome() {
     if (total === 0) {
       c.appendChild(el('div', 'status', '항목 없음'));
     } else if (done === total) {
-      c.appendChild(el('div', 'status done', '✓ 다 챙겼어요!'));
+      c.appendChild(el('div', 'status done', '✓ 다 챙겼어요! (⋯ → 보관)'));
     }
     if (total > 0) {
       const bar = el('div', 'bar');
@@ -217,14 +251,18 @@ function toggleMenu(l, btn, wrap) {
   m.setAttribute('role', 'menu');
   m.setAttribute('aria-label', l.name + ' 메뉴');
   const edit = el('button', 'menu-item', '수정');
+  const arch = el('button', 'menu-item', '보관');
   const del = el('button', 'menu-item danger', '삭제');
-  [edit, del].forEach((b) => { b.type = 'button'; b.setAttribute('role', 'menuitem'); m.appendChild(b); });
+  const items = [edit, arch, del];
+  items.forEach((b) => { b.type = 'button'; b.setAttribute('role', 'menuitem'); m.appendChild(b); });
   edit.addEventListener('click', () => { closeMenu(false); openEdit(l.id); });
+  arch.addEventListener('click', () => { closeMenu(false); archiveList(l.id); });
   del.addEventListener('click', () => { closeMenu(false); deleteList(l.id); });
   m.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
     e.preventDefault();
-    (document.activeElement === edit ? del : edit).focus();
+    const i = items.indexOf(document.activeElement);
+    items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
   });
   wrap.appendChild(m);
   btn.setAttribute('aria-expanded', 'true');
@@ -260,16 +298,13 @@ function deleteList(id) {
 // ---------- 상세 ----------
 function openDetail(id) {
   openId = id;
-  $('home').hidden = true;
-  $('detail').hidden = false;
-  $('detail').scrollTop = 0;
+  showScreen('detail');
   renderDetail();
   $('backBtn').focus();
 }
 function closeDetail() {
   openId = null;
-  $('detail').hidden = true;
-  $('home').hidden = false;
+  showScreen('home');
   renderHome();
 }
 
@@ -545,8 +580,7 @@ function openForm(l) {
   setRemindUI(hasRemind(l));
   setRemindError('');
   setRemindMsg(draftRemindOn ? permissionHint() : '');
-  $('home').hidden = true;
-  $('create').hidden = false;
+  showScreen('create');
   $('createForm').querySelector('.form-body').scrollTop = 0;
   $('titleInput').focus();
   initialSig = formSig();
@@ -560,8 +594,7 @@ function closeCreate(force) {
       !window.confirm('작성 중인 내용이 사라져요. 나갈까요?')) return;
   creating = false;
   editingId = null;
-  $('create').hidden = true;
-  $('home').hidden = false;
+  showScreen('home');
   renderHome();
   const back = wasEdit && document.querySelector('.more-btn[data-id="' + wasEdit + '"]');
   (back || $('fab')).focus();
@@ -654,7 +687,7 @@ function submitCreate() {
 
 // ---------- 알림 발송 ----------
 const reminderKey = (l) => l.id + ':' + l.remindAt;
-const isDue = (l, now) => hasRemind(l) && !l.notified && l.remindAt <= now;
+const isDue = (l, now) => hasRemind(l) && !l.archived && !l.notified && l.remindAt <= now;
 
 // 여러 탭 대비: 발송 직전에 localStorage의 최신 상태를 읽어 이미 처리됐는지 확인
 function syncFromStorage(l) {
@@ -726,12 +759,207 @@ function checkReminders(now) {
   });
   if (changed) {
     if (!creating && !$('home').hidden) renderHome();
+    if (!$('archive').hidden) renderArchive();
     if (openId && !$('detail').hidden) {
       const cur = lists.find((x) => x.id === openId);
       if (cur) updateProgress(cur);
     }
   }
   return sent;
+}
+
+// ---------- 보관함 ----------
+function archiveList(id) {
+  const l = lists.find((x) => x.id === id);
+  if (!l) return;
+  l.archived = true;
+  l.archivedAt = Date.now();
+  save();
+  if (saveFailed) { l.archived = false; toast('보관하지 못했어요. 저장 공간을 확인해 주세요.'); return; }
+  renderHome();
+  toast('보관함으로 옮겼어요. 오른쪽 위 📦에서 볼 수 있어요.');
+}
+function openArchive() { closeMenu(false); showScreen('archive'); renderArchive(); $('archiveBack').focus(); }
+function renderArchive() {
+  const box = $('archiveList');
+  box.textContent = '';
+  const arr = lists.filter((l) => l.archived).sort((a, b) => (b.archivedAt || 0) - (a.archivedAt || 0));
+  if (arr.length === 0) { box.appendChild(el('div', 'empty', '보관한 리스트가 없어요. 홈에서 ⋯ → 보관을 누르면 여기로 와요.')); return; }
+  arr.forEach((l) => {
+    const { done, total } = counts(l);
+    const c = el('div', 'card');
+    c.style.setProperty('--accent', COLORS[l.kind] || COLORS['전체']);
+    c.appendChild(el('div', 'name', l.name));
+    const sub = el('div', 'sub');
+    sub.appendChild(el('span', 'tag', l.kind));
+    sub.appendChild(document.createTextNode(' · ' + done + '/' + total + (l.archivedAt ? ' · ' + fmtRemind(l.archivedAt) + ' 보관' : '')));
+    c.appendChild(sub);
+    const row = el('div', 'card-actions');
+    const reuse = el('button', 'ghost-btn small', '다시 쓰기');
+    const del = el('button', 'ghost-btn small danger', '삭제');
+    [reuse, del].forEach((b) => { b.type = 'button'; row.appendChild(b); });
+    reuse.addEventListener('click', () => reuseList(l.id));
+    del.addEventListener('click', () => {
+      if (typeof window.confirm === 'function' && !window.confirm('정말 삭제하시겠습니까?\n\n“' + l.name + '”')) return;
+      lists = lists.filter((x) => x.id !== l.id);
+      save(); renderArchive(); toast('리스트를 삭제했어요.');
+    });
+    c.appendChild(row);
+    box.appendChild(c);
+  });
+}
+function reuseList(id) {
+  const l = lists.find((x) => x.id === id);
+  if (!l) return;
+  l.archived = false;
+  delete l.archivedAt;
+  l.items.forEach((it) => { it.done = false; }); // 체크를 모두 풀고 다시 시작
+  l.remindOn = false; l.remindAt = null; l.notified = false; l.alarm = '';
+  l.created = Math.max(Date.now(), lists.reduce((m, x) => Math.max(m, Number(x.created) || 0), 0) + 1);
+  save();
+  filter = '전체';
+  showScreen('home'); renderHome();
+  toast('“' + l.name + '”을(를) 다시 꺼냈어요. 알림은 수정에서 새로 정해 주세요.');
+}
+
+// ---------- 템플릿 ----------
+const TEMPLATES = [
+  { icon: '🧳', name: '1박 2일 여행', kind: '여행', items: ['신분증', '휴대폰 충전기', '보조배터리', '지갑·카드', '갈아입을 옷', '속옷·양말', '잠옷', '세면도구', '화장품·선크림', '상비약', '우산'] },
+  { icon: '✈️', name: '해외여행', kind: '여행', items: ['여권', '항공권(모바일)', '숙소 예약 확인', '환전·카드', '유심·eSIM', '멀티 어댑터', '휴대폰 충전기', '보조배터리', '상비약', '여행자 보험', '옷·속옷', '세면도구'] },
+  { icon: '⛺', name: '캠핑', kind: '여행', items: ['텐트', '침낭', '매트', '랜턴', '의자·테이블', '버너·가스', '코펠·식기', '아이스박스', '장작·착화제', '물티슈', '쓰레기봉투', '모기 퇴치제'] },
+  { icon: '💼', name: '출장', kind: '준비물', items: ['노트북', '노트북 충전기', '명함', '발표 자료', '신분증', '정장·셔츠', '구두', '휴대폰 충전기', '세면도구', '영수증 봉투'] },
+  { icon: '🏋️', name: '운동 가방', kind: '준비물', items: ['운동복', '운동화', '수건', '물병', '이어폰', '샤워용품', '갈아입을 속옷', '로커 자물쇠'] },
+  { icon: '🛒', name: '일주일 장보기', kind: '장보기', items: ['쌀', '계란', '우유', '두부', '양파', '대파', '고기', '과일', '라면', '휴지'] },
+  { icon: '📦', name: '이사 준비', kind: '준비물', items: ['이삿짐센터 예약', '전입신고', '인터넷 이전 신청', '도시가스 정산', '관리비 정산', '우편물 주소 변경', '박스·테이프', '청소 도구'] }
+];
+function renderTemplates() {
+  const box = $('tplList');
+  box.textContent = '';
+  TEMPLATES.forEach((t) => {
+    const c = el('button', 'card');
+    c.type = 'button';
+    c.style.setProperty('--accent', COLORS[t.kind] || COLORS['전체']);
+    const row = el('div', 'row');
+    row.appendChild(el('span', 'name', t.icon + ' ' + t.name));
+    c.appendChild(row);
+    const sub = el('div', 'sub');
+    sub.appendChild(el('span', 'tag', t.kind));
+    sub.appendChild(document.createTextNode(' · 항목 ' + t.items.length + '개'));
+    c.appendChild(sub);
+    c.appendChild(el('div', 'status', t.items.slice(0, 4).join(', ') + ' …'));
+    c.addEventListener('click', () => openTemplate(t));
+    box.appendChild(c);
+  });
+}
+function openTemplate(t) {
+  openForm(null);
+  $('titleInput').value = t.name;
+  $('titleCount').textContent = t.name.length + '/30';
+  draftKind = t.kind;
+  draftItems = t.items.map((text) => ({ text, ref: null }));
+  renderKindChips();
+  renderDraft();
+  initialSig = ''; // 템플릿에서 시작하면 닫을 때 확인 창을 띄움
+  toast('템플릿 항목을 채웠어요. 필요 없는 건 ✕로 빼 주세요.');
+}
+
+// ---------- 설정 ----------
+function permText() {
+  if (!notifSupported()) return '지원 안 함';
+  return { granted: '허용됨 ✅', denied: '차단됨 ⛔', default: '아직 안 정함' }[window.Notification.permission] || '알 수 없음';
+}
+function renderSettings() {
+  $('permState').textContent = permText();
+  $('permBtn').hidden = !notifSupported() || window.Notification.permission !== 'default';
+  $('statLists').textContent = lists.filter((l) => !l.archived).length + '개';
+  $('statArchived').textContent = lists.filter((l) => l.archived).length + '개';
+  if (notifSupported() && window.Notification.permission === 'denied') {
+    $('testMsg').textContent = '브라우저에서 알림이 차단돼 있어요. 주소창 왼쪽 아이콘 → 사이트 설정 → 알림을 "허용"으로 바꿔 주세요.';
+  }
+}
+function requestPerm() {
+  if (!notifSupported()) return;
+  const done = () => renderSettings();
+  try {
+    const r = window.Notification.requestPermission(done);
+    if (r && typeof r.then === 'function') r.then(done, done);
+  } catch (e) { done(); }
+}
+let testTimer = null;
+function testNotification() {
+  if (!notifSupported()) { $('testMsg').textContent = '이 브라우저는 알림을 지원하지 않아요.'; return; }
+  if (window.Notification.permission !== 'granted') {
+    $('testMsg').textContent = '먼저 "알림 허용하기"를 눌러 알림을 허용해 주세요.';
+    if (window.Notification.permission === 'default') requestPerm();
+    return;
+  }
+  clearTimeout(testTimer);
+  $('testMsg').textContent = '5초 뒤에 알림이 와요. 이 화면을 닫지 마세요.';
+  testTimer = setTimeout(() => {
+    try {
+      new window.Notification('챙김이 알림 테스트', { body: '알림이 잘 와요! 정해 둔 시각에도 이렇게 알려 드려요.', tag: 'changimi-test' });
+      $('testMsg').textContent = '알림을 보냈어요. 화면에 안 보였다면 기기의 방해 금지·집중 모드를 확인해 주세요.';
+    } catch (e) {
+      toast('🔔 챙김이 알림 테스트');
+      $('testMsg').textContent = '이 환경에서는 시스템 알림을 띄울 수 없어 화면 안 알림으로 대신했어요.';
+    }
+  }, 5000);
+}
+function exportData() {
+  const data = { app: 'changimi', version: 1, exportedAt: new Date().toISOString(), lists };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'changimi-backup-' + ymd(Date.now()) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  $('dataMsg').textContent = '백업 파일을 내려받았어요. 안전한 곳에 보관해 주세요.';
+}
+function cleanList(x) { // 불러온 데이터를 안전한 형태로 정리
+  if (!x || typeof x !== 'object' || typeof x.name !== 'string' || !Array.isArray(x.items)) return null;
+  const at = typeof x.remindAt === 'number' && isFinite(x.remindAt) ? x.remindAt : null;
+  return {
+    id: typeof x.id === 'string' && x.id ? x.id.slice(0, 40) : newId(),
+    name: x.name.slice(0, 30) || '이름 없음',
+    kind: CREATE_KINDS.includes(x.kind) ? x.kind : '준비물',
+    created: Number(x.created) || Date.now(),
+    alarm: typeof x.alarm === 'string' ? x.alarm.slice(0, 40) : '',
+    remindOn: x.remindOn === true && at !== null, remindAt: at,
+    notified: typeof x.notified === 'number' ? x.notified : false,
+    archived: x.archived === true, archivedAt: Number(x.archivedAt) || undefined,
+    items: x.items.filter((i) => i && typeof i.text === 'string').slice(0, 300)
+      .map((i) => ({ text: i.text.slice(0, 60), done: i.done === true, group: typeof i.group === 'string' ? i.group.slice(0, 20) : '' }))
+  };
+}
+function importData(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    let arr;
+    try {
+      const d = JSON.parse(r.result);
+      arr = (Array.isArray(d) ? d : d && d.lists);
+      if (!Array.isArray(arr)) throw new Error('bad');
+    } catch (e) { $('dataMsg').textContent = '챙김이 백업 파일이 아니에요. 내보내기로 만든 .json 파일을 골라 주세요.'; return; }
+    const cleaned = arr.map(cleanList).filter(Boolean);
+    if (typeof window.confirm === 'function' &&
+        !window.confirm('지금 데이터를 백업 파일(리스트 ' + cleaned.length + '개)로 바꿀까요?\n지금 있는 리스트는 사라져요.')) return;
+    const prev = lists;
+    lists = cleaned;
+    save();
+    if (saveFailed) { lists = prev; $('dataMsg').textContent = '불러오지 못했어요. 저장 공간을 확인해 주세요.'; return; }
+    renderSettings();
+    $('dataMsg').textContent = '백업을 불러왔어요. 리스트 ' + cleaned.length + '개.';
+  };
+  r.onerror = () => { $('dataMsg').textContent = '파일을 읽지 못했어요.'; };
+  r.readAsText(file);
+}
+function resetData() {
+  if (typeof window.confirm !== 'function' || !window.confirm('모든 리스트를 지울까요? 되돌릴 수 없어요.\n(필요하면 먼저 백업해 두세요)')) return;
+  lists = [];
+  save();
+  renderSettings();
+  $('dataMsg').textContent = '모든 데이터를 지웠어요.';
 }
 
 // ---------- 시작 ----------
@@ -749,8 +977,15 @@ function init() {
   });
   $('backBtn').addEventListener('click', closeDetail);
   $('fab').addEventListener('click', openCreate);
-  $('archiveBtn').addEventListener('click', soon);
-  document.querySelectorAll('[data-soon]').forEach((b) => b.addEventListener('click', soon));
+  $('archiveBtn').addEventListener('click', openArchive);
+  $('archiveBack').addEventListener('click', () => goTab('home'));
+  document.querySelectorAll('#tabbar .tab').forEach((b) => b.addEventListener('click', () => goTab(b.dataset.tab)));
+  $('permBtn').addEventListener('click', requestPerm);
+  $('testBtn').addEventListener('click', testNotification);
+  $('exportBtn').addEventListener('click', exportData);
+  $('importBtn').addEventListener('click', () => { $('importFile').value = ''; $('importFile').click(); });
+  $('importFile').addEventListener('change', (e) => importData(e.target.files && e.target.files[0]));
+  $('resetBtn').addEventListener('click', resetData);
   $('createClose').addEventListener('click', () => closeCreate(false));
   $('createForm').addEventListener('submit', (e) => { e.preventDefault(); submitCreate(); });
   $('titleInput').addEventListener('input', () => {
@@ -769,12 +1004,14 @@ function init() {
     if (menuEl) { closeMenu(true); return; }
     if (creating) closeCreate(false);
     else if (openId) closeDetail();
+    else if (!$('archive').hidden) goTab('home');
   });
   document.addEventListener('click', (e) => {
     if (menuEl && !menuEl.contains(e.target) && e.target !== menuBtn) closeMenu(false);
   });
   $('remindToggle').addEventListener('click', onRemindToggle);
   ['remindDate', 'remindTime'].forEach((id) => $(id).addEventListener('input', () => setRemindError('')));
+  showScreen('home');
   renderHome();
   // 페이지가 열려 있는 동안만 동작 (권한 요청은 하지 않고 확인만 함)
   checkReminders();

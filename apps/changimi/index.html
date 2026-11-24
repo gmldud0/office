@@ -2,8 +2,12 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#6b6bd6">
 <title>챙김이</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -22,12 +26,61 @@
     <div class="chips" id="chips" role="tablist" aria-label="리스트 종류"></div>
     <main id="cards" class="cards"></main>
     <button type="button" class="fab" id="fab" aria-label="새 리스트">+</button>
-    <nav class="tabbar" id="tabbar" aria-label="하단 메뉴">
-      <button type="button" class="tab active" aria-current="page"><span>🏠</span>홈</button>
-      <button type="button" class="tab" data-soon><span>📋</span>템플릿</button>
-      <button type="button" class="tab" data-soon><span>⚙️</span>설정</button>
-    </nav>
   </section>
+
+  <!-- 템플릿 화면 -->
+  <section id="templates" class="screen" hidden>
+    <header class="topbar"><h1>템플릿</h1></header>
+    <p class="hint">자주 쓰는 목록이에요. 누르면 항목이 채워진 채로 새 리스트를 만들 수 있어요. 만들기 전에 빼거나 더할 수 있어요.</p>
+    <div id="tplList" class="cards"></div>
+  </section>
+
+  <!-- 보관함 화면 -->
+  <section id="archive" class="screen" hidden>
+    <header class="topbar">
+      <button type="button" class="icon-btn" id="archiveBack" aria-label="뒤로가기">←</button>
+      <h1>보관함</h1>
+    </header>
+    <p class="hint">다 챙긴 리스트를 보관해 두는 곳이에요. 다시 쓰려면 "다시 쓰기"를 누르세요. 체크가 모두 풀린 채로 홈에 돌아가요.</p>
+    <div id="archiveList" class="cards"></div>
+  </section>
+
+  <!-- 설정 화면 -->
+  <section id="settings" class="screen" hidden>
+    <header class="topbar"><h1>설정</h1></header>
+
+    <h2 class="section-title">알림</h2>
+    <div class="set-card">
+      <div class="set-line"><span>알림 권한</span><b id="permState">확인 중…</b></div>
+      <button type="button" class="ghost-btn" id="permBtn">알림 허용하기</button>
+      <button type="button" class="ghost-btn" id="testBtn">알림 테스트 (5초 뒤)</button>
+      <p id="testMsg" class="set-msg" role="status"></p>
+      <p class="set-note">⚠️ 알림은 챙김이 화면이 <b>열려 있을 때만</b> 와요. 탭이나 브라우저를 닫으면 오지 않아요.</p>
+    </div>
+
+    <h2 class="section-title">데이터</h2>
+    <div class="set-card">
+      <p class="set-note">데이터는 이 기기의 브라우저에만 저장돼요. 브라우저 기록을 지우거나 기기를 바꾸기 전에 백업해 두세요.</p>
+      <button type="button" class="ghost-btn" id="exportBtn">백업 파일 내보내기</button>
+      <button type="button" class="ghost-btn" id="importBtn">백업 파일 불러오기</button>
+      <input type="file" id="importFile" accept=".json,application/json" hidden>
+      <p id="dataMsg" class="set-msg" role="status"></p>
+      <button type="button" class="ghost-btn danger" id="resetBtn">모든 데이터 지우기</button>
+    </div>
+
+    <h2 class="section-title">앱 정보</h2>
+    <div class="set-card">
+      <div class="set-line"><span>버전</span><b>0.2</b></div>
+      <div class="set-line"><span>리스트</span><b id="statLists">0개</b></div>
+      <div class="set-line"><span>보관한 리스트</span><b id="statArchived">0개</b></div>
+    </div>
+  </section>
+
+  <nav class="tabbar" id="tabbar" aria-label="하단 메뉴">
+    <button type="button" class="tab active" data-tab="home" aria-current="page"><span>🏠</span>홈</button>
+    <button type="button" class="tab" data-tab="templates"><span>📋</span>템플릿</button>
+    <button type="button" class="tab" data-tab="settings"><span>⚙️</span>설정</button>
+  </nav>
 
   <!-- 리스트 상세 화면 -->
   <section id="detail" class="screen" hidden>
