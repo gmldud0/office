@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const queueDir = path.resolve(here, '..', 'queue');
+const queueDir = process.env.QUEUE_DIR ? path.resolve(process.env.QUEUE_DIR) : path.resolve(here, '..', 'queue');
 
 function loadPlaywright() {
   const req = createRequire(import.meta.url);
