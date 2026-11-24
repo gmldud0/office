@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>챙김이</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="frame">
+  <!-- 홈 화면 -->
+  <section id="home" class="screen">
+    <header class="topbar">
+      <h1>챙김이</h1>
+      <button type="button" class="icon-btn" id="archiveBtn" aria-label="보관함">📦</button>
+    </header>
+    <div id="notice" class="banner" hidden>
+      <span>데이터는 이 기기에만 저장돼요. 설정에서 백업할 수 있어요.</span>
+      <button type="button" id="noticeClose" aria-label="안내 닫기">✕</button>
+    </div>
+    <div id="saveError" class="banner warn" hidden>저장하지 못했어요. 기기 저장 공간을 확인해 주세요.</div>
+    <div class="chips" id="chips" role="tablist" aria-label="리스트 종류"></div>
+    <main id="cards" class="cards"></main>
+    <button type="button" class="fab" id="fab" aria-label="새 리스트">+</button>
+    <nav class="tabbar" id="tabbar" aria-label="하단 메뉴">
+      <button type="button" class="tab active" aria-current="page"><span>🏠</span>홈</button>
+      <button type="button" class="tab" data-soon><span>📋</span>템플릿</button>
+      <button type="button" class="tab" data-soon><span>⚙️</span>설정</button>
+    </nav>
+  </section>
+
+  <!-- 리스트 상세 화면 -->
+  <section id="detail" class="screen" hidden>
+    <header class="topbar">
+      <button type="button" class="icon-btn" id="backBtn" aria-label="뒤로가기">←</button>
+      <h1 id="detailTitle"></h1>
+    </header>
+    <div class="detail-head" id="detailHead">
+      <div class="meta" id="detailMeta"></div>
+      <div class="bar"><div class="fill" id="detailFill"></div></div>
+    </div>
+    <div id="items" class="items"></div>
+  </section>
+
+  <!-- 새 체크리스트 만들기 화면 -->
+  <section id="create" class="screen form-screen" hidden aria-labelledby="createTitle">
+    <header class="topbar">
+      <button type="button" class="icon-btn" id="createClose" aria-label="닫기">✕</button>
+      <h1 id="createTitle">새 체크리스트 만들기</h1>
+    </header>
+    <form id="createForm" class="form-wrap" novalidate>
+      <div class="form-body">
+        <label class="field-label" for="titleInput">무엇을 챙길 건가요?</label>
+        <input type="text" id="titleInput" class="text-input" maxlength="30" autocomplete="off"
+               placeholder="예: 제주 1박 2일 짐" aria-describedby="titleErr titleCount" required>
+        <div class="field-foot">
+          <span id="titleErr" class="err" role="alert"></span>
+          <span id="titleCount" class="count">0/30</span>
+        </div>
+
+        <div class="field-label" id="kindLabel">종류</div>
+        <div class="chips wrap" id="kindChips" role="radiogroup" aria-labelledby="kindLabel"></div>
+
+        <label class="field-label" for="itemInput">항목 <span id="itemCount" class="count">(0개)</span></label>
+        <div class="add-row">
+          <input type="text" id="itemInput" class="text-input" maxlength="60" autocomplete="off"
+                 placeholder="예: 여권" enterkeyhint="done">
+          <button type="button" class="add-btn" id="itemAdd">추가</button>
+        </div>
+        <ul id="draftItems" class="draft-list" aria-label="추가한 항목"></ul>
+
+        <div class="field-label" id="remindLabel">알림</div>
+        <div class="remind-row">
+          <span id="remindText" class="remind-text">정해진 시각에 알림 받기</span>
+          <button type="button" id="remindToggle" class="switch" role="switch" aria-checked="false"
+                  aria-labelledby="remindLabel remindText"></button>
+        </div>
+        <div id="remindFields" class="remind-fields" hidden>
+          <div class="remind-field">
+            <label class="remind-sub" for="remindDate">날짜</label>
+            <input type="date" id="remindDate" class="text-input" aria-describedby="remindErr">
+          </div>
+          <div class="remind-field">
+            <label class="remind-sub" for="remindTime">시간</label>
+            <input type="time" id="remindTime" class="text-input" aria-describedby="remindErr">
+          </div>
+        </div>
+        <div id="remindMsg" class="remind-msg" role="status"></div>
+        <div id="remindErr" class="err remind-err" role="alert"></div>
+      </div>
+      <div class="form-footer">
+        <button type="submit" class="primary save-btn" id="saveBtn">저장</button>
+      </div>
+    </form>
+  </section>
+
+  <div id="toast"class="toast" role="status" aria-live="polite"></div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
