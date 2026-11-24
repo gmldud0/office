@@ -123,7 +123,10 @@ def publish() -> None:
     POSTED.mkdir(exist_ok=True)
     post["published"] = {"media_id": media_id, "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     (post_dir / "post.json").write_text(json.dumps(post, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    shutil.move(str(post_dir), str(POSTED / post_dir.name))
+    dest = POSTED / post_dir.name
+    if dest.exists():  # 같은 게시물을 다시 올린 경우 덮어쓰지 않게 이름에 시각을 붙인다
+        dest = POSTED / f"{post_dir.name}-{time.strftime('%Y%m%d%H%M%S', time.gmtime())}"
+    shutil.move(str(post_dir), str(dest))
 
 
 def refresh() -> None:
