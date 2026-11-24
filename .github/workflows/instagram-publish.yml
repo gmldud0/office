@@ -32,6 +32,7 @@ jobs:
           PAUSED: ${{ vars.IG_PAUSED }}
         run: |
           if [ "$HAS_TOKEN" != "true" ]; then echo "IG_ACCESS_TOKEN 시크릿이 아직 없어요. 건너뜁니다."; echo "name=" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ -f instagram/PAUSED ]; then echo "instagram/PAUSED 파일이 있어 일시 정지 중이에요."; echo "name=" >> "$GITHUB_OUTPUT"; exit 0; fi
           if [ "$PAUSED" = "1" ]; then echo "IG_PAUSED=1 이라 일시 정지 중이에요."; echo "name=" >> "$GITHUB_OUTPUT"; exit 0; fi
           NEXT=$(ls -1 instagram/queue 2>/dev/null | sort | head -n 1 || true)
           echo "name=$NEXT" >> "$GITHUB_OUTPUT"

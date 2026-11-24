@@ -4,6 +4,7 @@
   python3 instagram/publish.py publish   # 하나 올리기 (GitHub Actions가 하루 2번 실행)
   python3 instagram/publish.py refresh   # (인스타 로그인 토큰일 때만) 기간 연장 60일
   python3 instagram/publish.py check     # 토큰이 살아 있는지, 어느 계정인지 확인
+  python3 instagram/publish.py delete ID # 이미 올라간 게시물 지우기
 
 환경 변수
   IG_ACCESS_TOKEN  접근 토큰 (GitHub Secrets에 저장)
@@ -41,7 +42,7 @@ def token() -> str:
 
 def call(method: str, url: str, params: dict) -> dict:
     data = urllib.parse.urlencode(params).encode()
-    if method == "GET":
+    if method in ("GET", "DELETE"):
         url = f"{url}?{data.decode()}"
         data = None
     req = urllib.request.Request(url, data=data, method=method)
@@ -148,6 +149,22 @@ def check() -> None:
     print(f"대기열: {n}개")
 
 
+def delete() -> None:
+    if len(sys.argv) < 3 or not sys.argv[2].isdigit():
+        sys.exit("사용법: publish.py delete <media_id>")
+    media_id = sys.argv[2]
+    r = call("DELETE", f"{GRAPH}/{media_id}", {"access_token": token()})
+    if r.get("success") is False:
+        sys.exit(f"삭제 실패: {r}")
+    print(f"✓ 삭제 완료 (media id {media_id})")
+    # posted 기록에 삭제 표시
+    for pj in POSTED.glob("*/post.json"):
+        post = json.loads(pj.read_text(encoding="utf-8"))
+        if post.get("published", {}).get("media_id") == media_id:
+            post["deleted_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            pj.write_text(json.dumps(post, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "publish"
-    {"publish": publish, "refresh": refresh, "check": check}.get(cmd, lambda: sys.exit(f"모르는 명령: {cmd}"))()
+    {"publish": publish, "refresh": refresh, "check": check, "delete": delete}.get(cmd, lambda: sys.exit(f"모르는 명령: {cmd}"))()
