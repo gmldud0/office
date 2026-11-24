@@ -1,4 +1,6 @@
-# 인스타그램 접근 토큰은 60일이면 만료된다. 매주 한 번 기간을 연장하고, 토큰 상태를 확인한다.
+# 매주 한 번 토큰 상태를 확인한다.
+# 통합 로그인(시스템 사용자 토큰)은 만료되지 않아 확인만 하고,
+# 예전 인스타 로그인 토큰(IG_USER_ID 변수 없음)일 때만 60일 기간을 연장한다.
 name: 인스타 토큰 연장
 
 on:
@@ -27,10 +29,12 @@ jobs:
         if: steps.guard.outputs.ok == 'true'
         env:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USER_ID: ${{ vars.IG_USER_ID }}
+          GRAPH_BASE: ${{ vars.GRAPH_BASE }}
         run: python3 instagram/publish.py check
 
       - name: 토큰 기간 연장
-        if: steps.guard.outputs.ok == 'true'
+        if: steps.guard.outputs.ok == 'true' && vars.IG_USER_ID == ''
         id: refresh
         env:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
@@ -38,7 +42,7 @@ jobs:
 
       # GH_PAT가 있으면 새 토큰을 시크릿에 자동으로 저장한다 (없으면 이 단계는 건너뜀)
       - name: 새 토큰 저장
-        if: steps.guard.outputs.ok == 'true'
+        if: steps.guard.outputs.ok == 'true' && vars.IG_USER_ID == ''
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           NEW_TOKEN: ${{ steps.refresh.outputs.token }}

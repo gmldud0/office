@@ -2,14 +2,16 @@
 """인스타그램 자동 게시: 대기열(instagram/queue)에서 가장 오래된 게시물 하나를 올리고 posted/로 옮긴다.
 
   python3 instagram/publish.py publish   # 하나 올리기 (GitHub Actions가 하루 2번 실행)
-  python3 instagram/publish.py refresh   # 접근 토큰 기간 연장 (60일 → 다시 60일)
+  python3 instagram/publish.py refresh   # (인스타 로그인 토큰일 때만) 기간 연장 60일
   python3 instagram/publish.py check     # 토큰이 살아 있는지, 어느 계정인지 확인
 
 환경 변수
-  IG_ACCESS_TOKEN  인스타그램 접근 토큰 (GitHub Secrets에 저장)
+  IG_ACCESS_TOKEN  접근 토큰 (GitHub Secrets에 저장)
+  IG_USER_ID       인스타 계정 ID. 통합 로그인(시스템 사용자 토큰)일 때 필요 (GitHub Variables에 저장)
   IMAGE_BASE_URL   대기열 이미지가 공개되는 주소의 앞부분. 예: https://raw.githubusercontent.com/<계정>/<저장소>/<커밋>
   DRY_RUN=1        실제로 올리지 않고 할 일만 출력
-  GRAPH_BASE       API 주소 (기본: https://graph.instagram.com/v23.0)
+  GRAPH_BASE       API 주소 (기본: IG_USER_ID가 있으면 https://graph.facebook.com/v23.0,
+                   없으면 https://graph.instagram.com/v23.0)
 """
 import json
 import os
@@ -24,7 +26,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 QUEUE = ROOT / "queue"
 POSTED = ROOT / "posted"
-GRAPH = os.environ.get("GRAPH_BASE", "https://graph.instagram.com/v23.0").rstrip("/")
+IG_USER_ID = os.environ.get("IG_USER_ID", "").strip()
+_default_graph = "https://graph.facebook.com/v23.0" if IG_USER_ID else "https://graph.instagram.com/v23.0"
+GRAPH = (os.environ.get("GRAPH_BASE", "").strip() or _default_graph).rstrip("/")
 DRY = os.environ.get("DRY_RUN") == "1"
 
 
@@ -48,6 +52,15 @@ def call(method: str, url: str, params: dict) -> dict:
         body = e.read().decode(errors="replace")
         # 토큰이 로그에 찍히지 않도록 오류 본문만 보여 준다
         sys.exit(f"인스타그램 API 오류 ({e.code}): {body}")
+
+
+def account(tok: str) -> tuple[str, str]:
+    """(인스타 계정 ID, 아이디)를 돌려준다."""
+    if IG_USER_ID:
+        r = call("GET", f"{GRAPH}/{IG_USER_ID}", {"fields": "username", "access_token": tok})
+        return IG_USER_ID, r.get("username", "?")
+    me = call("GET", f"{GRAPH}/me", {"fields": "user_id,username", "access_token": tok})
+    return me.get("user_id") or me.get("id"), me.get("username", "?")
 
 
 def next_post() -> Path | None:
@@ -88,9 +101,8 @@ def publish() -> None:
         return
 
     tok = token()
-    me = call("GET", f"{GRAPH}/me", {"fields": "user_id,username", "access_token": tok})
-    uid = me.get("user_id") or me.get("id")
-    print(f"계정: @{me.get('username')}")
+    uid, username = account(tok)
+    print(f"계정: @{username}")
 
     if len(urls) == 1:
         cid = call("POST", f"{GRAPH}/{uid}/media", {"image_url": urls[0], "caption": caption, "access_token": tok})["id"]
@@ -130,8 +142,8 @@ def refresh() -> None:
 
 
 def check() -> None:
-    me = call("GET", f"{GRAPH}/me", {"fields": "user_id,username,account_type", "access_token": token()})
-    print(f"✓ 토큰 정상: @{me.get('username')} ({me.get('account_type')})")
+    uid, username = account(token())
+    print(f"✓ 토큰 정상: @{username} (id {uid})")
     n = len([p for p in QUEUE.iterdir() if p.is_dir()]) if QUEUE.exists() else 0
     print(f"대기열: {n}개")
 
