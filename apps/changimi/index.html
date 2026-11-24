@@ -31,7 +31,10 @@
   <!-- 템플릿 화면 -->
   <section id="templates" class="screen" hidden>
     <header class="topbar"><h1>템플릿</h1></header>
-    <p class="hint">자주 쓰는 목록이에요. 누르면 항목이 채워진 채로 새 리스트를 만들 수 있어요. 만들기 전에 빼거나 더할 수 있어요.</p>
+    <p class="hint">누르면 항목이 채워진 채로 새 리스트를 만들 수 있어요. 만들기 전에 빼거나 더할 수 있어요.</p>
+    <h2 class="section-title" id="myTplTitle" hidden>내 템플릿</h2>
+    <div id="myTplList" class="cards"></div>
+    <h2 class="section-title">기본 템플릿</h2>
     <div id="tplList" class="cards"></div>
   </section>
 
@@ -65,12 +68,13 @@
       <button type="button" class="ghost-btn" id="importBtn">백업 파일 불러오기</button>
       <input type="file" id="importFile" accept=".json,application/json" hidden>
       <p id="dataMsg" class="set-msg" role="status"></p>
+      <button type="button" class="ghost-btn" id="sampleBtn">샘플 리스트 지우기</button>
       <button type="button" class="ghost-btn danger" id="resetBtn">모든 데이터 지우기</button>
     </div>
 
     <h2 class="section-title">앱 정보</h2>
     <div class="set-card">
-      <div class="set-line"><span>버전</span><b>0.2</b></div>
+      <div class="set-line"><span>버전</span><b>0.3</b></div>
       <div class="set-line"><span>리스트</span><b id="statLists">0개</b></div>
       <div class="set-line"><span>보관한 리스트</span><b id="statArchived">0개</b></div>
     </div>
@@ -92,7 +96,23 @@
       <div class="meta" id="detailMeta"></div>
       <div class="bar"><div class="fill" id="detailFill"></div></div>
     </div>
+    <div class="detail-actions">
+      <button type="button" class="ghost-btn small" id="calBtn">📅 캘린더에 추가</button>
+      <button type="button" class="ghost-btn small" id="shareBtn">📤 공유</button>
+      <button type="button" class="ghost-btn small" id="uncheckBtn">↺ 체크 모두 해제</button>
+    </div>
+    <div id="calMenu" class="set-card cal-menu" hidden>
+      <p class="set-note">휴대폰 캘린더에 일정으로 넣어 두면 <b>챙김이를 닫아도</b> 캘린더가 알려 줘요.</p>
+      <button type="button" class="ghost-btn" id="gcalBtn">구글 캘린더 (안드로이드·PC)</button>
+      <button type="button" class="ghost-btn" id="icsBtn">아이폰·기타 캘린더 (.ics 파일)</button>
+      <p class="set-note">구글 캘린더는 알림 시간이 캘린더 기본값(보통 30분 전)으로 정해져요. 일정을 열어 바꿀 수 있어요.</p>
+    </div>
     <div id="items" class="items"></div>
+    <form id="quickAdd" class="add-row quick-add" novalidate>
+      <input type="text" id="quickInput" class="text-input" maxlength="60" autocomplete="off"
+             placeholder="항목 추가 (예: 우산)" aria-label="항목 추가" enterkeyhint="done">
+      <button type="submit" class="add-btn">추가</button>
+    </form>
   </section>
 
   <!-- 새 체크리스트 만들기 화면 -->

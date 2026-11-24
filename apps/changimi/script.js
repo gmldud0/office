@@ -251,12 +251,14 @@ function toggleMenu(l, btn, wrap) {
   m.setAttribute('role', 'menu');
   m.setAttribute('aria-label', l.name + ' 메뉴');
   const edit = el('button', 'menu-item', '수정');
+  const tpl = el('button', 'menu-item', '템플릿으로 저장');
   const arch = el('button', 'menu-item', '보관');
   const del = el('button', 'menu-item danger', '삭제');
-  const items = [edit, arch, del];
+  const items = [edit, tpl, arch, del];
   items.forEach((b) => { b.type = 'button'; b.setAttribute('role', 'menuitem'); m.appendChild(b); });
   edit.addEventListener('click', () => { closeMenu(false); openEdit(l.id); });
   arch.addEventListener('click', () => { closeMenu(false); archiveList(l.id); });
+  tpl.addEventListener('click', () => { closeMenu(false); saveAsTemplate(l.id); });
   del.addEventListener('click', () => { closeMenu(false); deleteList(l.id); });
   m.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
@@ -316,10 +318,12 @@ function renderDetail() {
   $('detailHead').style.setProperty('--accent', accent);
   updateProgress(l);
 
+  $('calMenu').hidden = true;
+  $('calBtn').setAttribute('aria-expanded', 'false');
   const box = $('items');
   box.textContent = '';
   if (l.items.length === 0) {
-    box.appendChild(el('div', 'empty', '항목 없음'));
+    box.appendChild(el('div', 'empty', '아직 항목이 없어요. 아래 칸에 바로 추가해 보세요.'));
     return;
   }
   let lastGroup = null;
@@ -351,6 +355,7 @@ function updateProgress(l) {
   const bt = reminderLabel(l);
   if (bt) msg += ' · ' + bt;
   $('detailMeta').textContent = msg;
+  $('uncheckBtn').disabled = done === 0;
   $('detailFill').style.width = (total ? Math.round((done / total) * 100) : 0) + '%';
   $('detailFill').parentNode.style.display = total ? '' : 'none';
 }
@@ -832,24 +837,42 @@ const TEMPLATES = [
   { icon: '🛒', name: '일주일 장보기', kind: '장보기', items: ['쌀', '계란', '우유', '두부', '양파', '대파', '고기', '과일', '라면', '휴지'] },
   { icon: '📦', name: '이사 준비', kind: '준비물', items: ['이삿짐센터 예약', '전입신고', '인터넷 이전 신청', '도시가스 정산', '관리비 정산', '우편물 주소 변경', '박스·테이프', '청소 도구'] }
 ];
+function tplCard(t, onDelete) {
+  const wrap = el('div', 'card-wrap');
+  const c = el('button', 'card');
+  c.type = 'button';
+  c.style.setProperty('--accent', COLORS[t.kind] || COLORS['전체']);
+  const row = el('div', 'row');
+  row.appendChild(el('span', 'name', (t.icon || '⭐') + ' ' + t.name));
+  c.appendChild(row);
+  const sub = el('div', 'sub');
+  sub.appendChild(el('span', 'tag', t.kind));
+  sub.appendChild(document.createTextNode(' · 항목 ' + t.items.length + '개'));
+  c.appendChild(sub);
+  if (t.items.length) c.appendChild(el('div', 'status', t.items.slice(0, 4).join(', ') + (t.items.length > 4 ? ' …' : '')));
+  c.addEventListener('click', () => openTemplate(t));
+  wrap.appendChild(c);
+  if (onDelete) {
+    const d = el('button', 'more-btn', '✕');
+    d.type = 'button';
+    d.setAttribute('aria-label', t.name + ' 템플릿 삭제');
+    d.addEventListener('click', onDelete);
+    wrap.appendChild(d);
+  }
+  return wrap;
+}
 function renderTemplates() {
+  const mine = loadMyTemplates();
+  $('myTplTitle').hidden = mine.length === 0;
+  const myBox = $('myTplList');
+  myBox.textContent = '';
+  mine.forEach((t, i) => myBox.appendChild(tplCard(t, () => {
+    if (typeof window.confirm === 'function' && !window.confirm('“' + t.name + '” 템플릿을 지울까요?')) return;
+    mine.splice(i, 1); saveMyTemplates(mine); renderTemplates(); toast('템플릿을 지웠어요.');
+  })));
   const box = $('tplList');
   box.textContent = '';
-  TEMPLATES.forEach((t) => {
-    const c = el('button', 'card');
-    c.type = 'button';
-    c.style.setProperty('--accent', COLORS[t.kind] || COLORS['전체']);
-    const row = el('div', 'row');
-    row.appendChild(el('span', 'name', t.icon + ' ' + t.name));
-    c.appendChild(row);
-    const sub = el('div', 'sub');
-    sub.appendChild(el('span', 'tag', t.kind));
-    sub.appendChild(document.createTextNode(' · 항목 ' + t.items.length + '개'));
-    c.appendChild(sub);
-    c.appendChild(el('div', 'status', t.items.slice(0, 4).join(', ') + ' …'));
-    c.addEventListener('click', () => openTemplate(t));
-    box.appendChild(c);
-  });
+  TEMPLATES.forEach((t) => box.appendChild(tplCard(t)));
 }
 function openTemplate(t) {
   openForm(null);
@@ -962,6 +985,157 @@ function resetData() {
   $('dataMsg').textContent = '모든 데이터를 지웠어요.';
 }
 
+// ---------- 내 템플릿 ----------
+const TPL_KEY = 'changimi-templates';
+function loadMyTemplates() {
+  try {
+    const d = JSON.parse(localStorage.getItem(TPL_KEY));
+    if (Array.isArray(d)) return d.filter((t) => t && typeof t.name === 'string' && Array.isArray(t.items));
+  } catch (e) { /* 없으면 빈 목록 */ }
+  return [];
+}
+function saveMyTemplates(arr) {
+  try { localStorage.setItem(TPL_KEY, JSON.stringify(arr)); return true; } catch (e) { return false; }
+}
+function saveAsTemplate(id) {
+  const l = lists.find((x) => x.id === id);
+  if (!l) return;
+  if (!l.items.length) { toast('항목이 없는 리스트는 템플릿으로 저장할 수 없어요.'); return; }
+  const mine = loadMyTemplates();
+  const t = { icon: '⭐', name: l.name, kind: l.kind, items: l.items.map((i) => i.text) };
+  const at = mine.findIndex((x) => x.name === l.name);
+  if (at >= 0) mine[at] = t; else mine.unshift(t);
+  if (!saveMyTemplates(mine.slice(0, 50))) { toast('저장하지 못했어요. 저장 공간을 확인해 주세요.'); return; }
+  toast(at >= 0 ? '같은 이름의 템플릿을 새 내용으로 바꿨어요.' : '템플릿으로 저장했어요. 📋 템플릿 탭에서 볼 수 있어요.');
+}
+
+// ---------- 상세 화면: 빠른 추가 · 체크 해제 · 공유 · 캘린더 ----------
+function currentList() { return lists.find((x) => x.id === openId); }
+function quickAdd(e) {
+  e.preventDefault();
+  const l = currentList();
+  const inp = $('quickInput');
+  const t = inp.value.trim();
+  if (!l || !t) { inp.focus(); return; }
+  l.items.push({ text: t.slice(0, 60), done: false, group: '' });
+  save();
+  if (saveFailed) { l.items.pop(); toast('추가하지 못했어요. 저장 공간을 확인해 주세요.'); return; }
+  inp.value = '';
+  renderDetail();
+  inp.focus();
+  const sc = $('detail');
+  sc.scrollTop = sc.scrollHeight;
+}
+function uncheckAll() {
+  const l = currentList();
+  if (!l) return;
+  const n = counts(l).done;
+  if (!n) return;
+  if (typeof window.confirm === 'function' && !window.confirm('체크한 ' + n + '개를 모두 풀까요?')) return;
+  const prev = l.items.map((i) => i.done);
+  l.items.forEach((i) => { i.done = false; });
+  save();
+  if (saveFailed) { l.items.forEach((i, k) => { i.done = prev[k]; }); toast('저장하지 못했어요.'); return; }
+  renderDetail();
+  toast('체크를 모두 풀었어요. 다시 챙겨 볼까요?');
+}
+function appUrl() {
+  return /^https?:/.test(location.protocol) ? location.href.split('#')[0].split('?')[0] : '';
+}
+function listText(l) {
+  const lines = ['📋 ' + l.name + ' (' + l.kind + ')'];
+  if (hasRemind(l)) lines.push('🔔 ' + fmtRemind(l.remindAt));
+  l.items.forEach((i) => lines.push((i.done ? '☑ ' : '☐ ') + i.text));
+  const url = appUrl();
+  lines.push('', '— 챙김이' + (url ? ' ' + url : ''));
+  return lines.join('\n');
+}
+async function shareList() {
+  const l = currentList();
+  if (!l) return;
+  const text = listText(l);
+  if (navigator.share) {
+    try { await navigator.share({ title: l.name, text }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('목록을 복사했어요. 카톡이나 메시지에 붙여넣으세요.');
+  } catch (e) {
+    window.prompt('아래 글을 복사해서 보내세요.', text);
+  }
+}
+function toggleCalMenu() {
+  const l = currentList();
+  if (!l) return;
+  if (!hasRemind(l)) { toast('먼저 ⋯ → 수정에서 알림 날짜와 시간을 정해 주세요.'); return; }
+  if (l.remindAt <= Date.now()) { toast('알림 시각이 지났어요. 수정에서 새 시각을 정해 주세요.'); return; }
+  const m = $('calMenu');
+  m.hidden = !m.hidden;
+  $('calBtn').setAttribute('aria-expanded', String(!m.hidden));
+}
+const utcStamp = (ts) => new Date(ts).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+function calDetails(l) {
+  const left = l.items.filter((i) => !i.done).map((i) => '☐ ' + i.text);
+  const url = appUrl();
+  return (left.length ? '아직 안 챙긴 것:\n' + left.join('\n') : '다 챙겼어요!') + (url ? '\n\n챙김이 열기: ' + url : '');
+}
+function openGoogleCal() {
+  const l = currentList();
+  if (!l || !hasRemind(l)) return;
+  const q = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: '챙김이: ' + l.name,
+    dates: utcStamp(l.remindAt) + '/' + utcStamp(l.remindAt + 15 * 60000),
+    details: calDetails(l)
+  });
+  window.open('https://calendar.google.com/calendar/render?' + q.toString(), '_blank', 'noopener');
+}
+function icsEscape(t) { return String(t).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+function downloadIcs() {
+  const l = currentList();
+  if (!l || !hasRemind(l)) return;
+  const url = appUrl();
+  const ics = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Changimi//KO', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    'UID:' + l.id + '-' + l.remindAt + '@changimi',
+    'DTSTAMP:' + utcStamp(Date.now()),
+    'DTSTART:' + utcStamp(l.remindAt),
+    'DTEND:' + utcStamp(l.remindAt + 15 * 60000),
+    'SUMMARY:' + icsEscape('챙김이: ' + l.name),
+    'DESCRIPTION:' + icsEscape(calDetails(l)),
+    url ? 'URL:' + url : '',
+    'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEscape(l.name + ' 챙길 시간이에요'), 'TRIGGER:PT0M', 'END:VALARM',
+    'END:VEVENT', 'END:VCALENDAR'
+  ].filter(Boolean).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+  a.download = 'changimi-' + ymd(l.remindAt) + '.ics';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast('캘린더 파일을 받았어요. 파일을 열면 캘린더에 추가돼요.');
+}
+
+// ---------- 샘플 지우기 ----------
+const SAMPLE_IDS = ['a1', 'a2', 'a3', 'a4'];
+function removeSamples() {
+  const n = lists.filter((l) => SAMPLE_IDS.includes(l.id)).length;
+  if (!n) { $('dataMsg').textContent = '지울 샘플 리스트가 없어요.'; return; }
+  if (typeof window.confirm === 'function' && !window.confirm('처음에 들어 있던 샘플 리스트 ' + n + '개를 지울까요?')) return;
+  lists = lists.filter((l) => !SAMPLE_IDS.includes(l.id));
+  save();
+  renderSettings();
+  $('dataMsg').textContent = '샘플 리스트 ' + n + '개를 지웠어요.';
+}
+
+// ---------- 오프라인(서비스워커) ----------
+function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
+  navigator.serviceWorker.register('sw.js').catch(() => { /* 오프라인 기능 없이 계속 */ });
+}
+
 // ---------- 시작 ----------
 function init() {
   lists = load();
@@ -986,6 +1160,13 @@ function init() {
   $('importBtn').addEventListener('click', () => { $('importFile').value = ''; $('importFile').click(); });
   $('importFile').addEventListener('change', (e) => importData(e.target.files && e.target.files[0]));
   $('resetBtn').addEventListener('click', resetData);
+  $('sampleBtn').addEventListener('click', removeSamples);
+  $('quickAdd').addEventListener('submit', quickAdd);
+  $('uncheckBtn').addEventListener('click', uncheckAll);
+  $('shareBtn').addEventListener('click', shareList);
+  $('calBtn').addEventListener('click', toggleCalMenu);
+  $('gcalBtn').addEventListener('click', openGoogleCal);
+  $('icsBtn').addEventListener('click', downloadIcs);
   $('createClose').addEventListener('click', () => closeCreate(false));
   $('createForm').addEventListener('submit', (e) => { e.preventDefault(); submitCreate(); });
   $('titleInput').addEventListener('input', () => {
@@ -1016,6 +1197,7 @@ function init() {
   // 페이지가 열려 있는 동안만 동작 (권한 요청은 하지 않고 확인만 함)
   checkReminders();
   setInterval(() => checkReminders(), CHECK_MS);
+  registerSW();
   document.addEventListener('visibilitychange', () => { if (!document.hidden) checkReminders(); });
   window.addEventListener('focus', () => checkReminders());
 }
