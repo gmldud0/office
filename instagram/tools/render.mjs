@@ -19,7 +19,7 @@ function loadPlaywright() {
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 // **강조** → 강조색
-const rich = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<b class="hl">$1</b>').replace(/\n/g, '<br>');
+const rich = (s) => esc(s).replace(/\*\*([\s\S]+?)\*\*/g, '<b class="hl">$1</b>').replace(/\n/g, '<br>');
 
 const fontCss = (w) => pathToFileURL(path.join(here, 'node_modules/@fontsource/noto-sans-kr', `${w}.css`)).href;
 
