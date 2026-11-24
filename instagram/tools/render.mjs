@@ -54,6 +54,14 @@ function slideHtml(slide, i, total, brand, t) {
       <h1 class="cover">${rich(slide.title)}</h1>
       ${slide.sub ? `<p class="sub">${rich(slide.sub)}</p>` : ''}
       <div class="swipe">옆으로 넘겨 보기 →</div>`;
+  } else if (slide.type === 'image') {
+    // 앱 화면 같은 이미지를 크게 보여 주는 카드. src는 instagram/ 폴더 기준 경로.
+    const src = pathToFileURL(path.resolve(here, '..', slide.src)).href;
+    inner = `
+      ${slide.num ? `<div class="num">${esc(slide.num)}</div>` : ''}
+      <h2 class="img-title">${rich(slide.title)}</h2>
+      ${slide.sub ? `<p class="img-sub">${rich(slide.sub)}</p>` : ''}
+      <div class="shot"><img src="${src}"></div>`;
   } else if (slide.type === 'end') {
     inner = `
       <h2 class="end">${rich(slide.title ?? '도움이 됐다면\n저장해 두세요')}</h2>
@@ -95,10 +103,15 @@ function slideHtml(slide, i, total, brand, t) {
   .hl { color: ${cover ? t.coverHl : t.hl}; }
   .swipe { margin-top: 80px; font-size: 36px; font-weight: 700; opacity: .7; }
   .cta { margin-top: 70px; align-self: flex-start; background: ${t.ctaBg}; color: ${t.ctaFg}; font-size: 40px; font-weight: 700; padding: 22px 40px; border-radius: 22px; }
+  .wrap.img { inset: 120px 96px 110px; justify-content: flex-start; }
+  h2.img-title { font-size: 64px; margin-bottom: 14px; }
+  .img-sub { font-size: 36px; line-height: 1.45; opacity: .8; margin-bottom: 30px; }
+  .shot { flex: 1; min-height: 0; display: flex; justify-content: center; align-items: flex-start; }
+  .shot img { max-height: 100%; max-width: 100%; border-radius: 40px; border: 8px solid #fff; box-shadow: 0 24px 60px rgba(0,0,0,.18); }
   .page { position: absolute; bottom: 60px; right: 96px; font-size: 30px; font-weight: 700; opacity: .5; }
 </style></head><body>
   <div class="top"><span class="brand">${esc(brand.name)}</span><span>${esc(brand.topic ?? '')}</span></div>
-  <div class="wrap">${inner}</div>
+  <div class="wrap${slide.type === 'image' ? ' img' : ''}">${inner}</div>
   <div class="page">${i + 1} / ${total}</div>
 </body></html>`;
 }

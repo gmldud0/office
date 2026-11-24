@@ -207,7 +207,7 @@ function renderHome() {
     if (total === 0) {
       c.appendChild(el('div', 'status', '항목 없음'));
     } else if (done === total) {
-      c.appendChild(el('div', 'status done', '✓ 다 챙겼어요! (⋯ → 보관)'));
+      c.appendChild(el('div', 'status done', '✓ 다 챙겼어요! 메뉴에서 보관할 수 있어요'));
     }
     if (total > 0) {
       const bar = el('div', 'bar');
