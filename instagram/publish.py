@@ -64,9 +64,29 @@ def account(tok: str) -> tuple[str, str]:
     return me.get("user_id") or me.get("id"), me.get("username", "?")
 
 
+def now_kst() -> time.struct_time:
+    """한국 시간. 시험할 때는 NOW_KST=2026-11-25T09:00 처럼 덮어쓸 수 있다."""
+    fixed = os.environ.get("NOW_KST", "").strip()
+    if fixed:
+        return time.strptime(fixed, "%Y-%m-%dT%H:%M")
+    return time.gmtime(time.time() + 9 * 3600)
+
+
 def next_post() -> Path | None:
+    """오늘 날짜의 이번 시간대 게시물만 고른다.
+    오전(15시 전) 실행은 YYYY-MM-DD-1-…, 오후 실행은 YYYY-MM-DD-2-…
+    없으면 아무것도 올리지 않는다 (다른 게시물이 앞당겨지지 않게).
+    FORCE_NEXT=1 이면 날짜와 상관없이 가장 앞의 게시물을 고른다 (손으로 실행할 때)."""
     posts = sorted(p for p in QUEUE.iterdir() if p.is_dir() and (p / "post.json").exists()) if QUEUE.exists() else []
-    return posts[0] if posts else None
+    if os.environ.get("FORCE_NEXT") == "1":
+        return posts[0] if posts else None
+    t = now_kst()
+    slot = "1" if t.tm_hour < 15 else "2"
+    prefix = f"{time.strftime('%Y-%m-%d', t)}-{slot}-"
+    matches = [p for p in posts if p.name.startswith(prefix)]
+    if not matches:
+        print(f"{prefix}… 게시물이 대기열에 없어요. 이번 시간은 건너뜁니다.")
+    return matches[0] if matches else None
 
 
 def wait_ready(container_id: str, tok: str) -> None:
@@ -83,7 +103,7 @@ def wait_ready(container_id: str, tok: str) -> None:
 def publish() -> None:
     post_dir = next_post()
     if not post_dir:
-        print("대기열이 비어 있어요. 올릴 게시물이 없습니다.")
+        print("이번 시간에 올릴 게시물이 없습니다.")
         return
     post = json.loads((post_dir / "post.json").read_text(encoding="utf-8"))
     base = os.environ.get("IMAGE_BASE_URL", "").rstrip("/")
