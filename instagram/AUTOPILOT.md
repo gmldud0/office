@@ -76,9 +76,10 @@ git fetch origin claude/bureau-des-agents-setup-dngl1h && git checkout claude/bu
 ## 5. 카드 만들기와 확인
 ```bash
 cd instagram/tools && node render.mjs ../content/YYYY-MM-DD.json   # queue/ 에 JPEG 생성, 디자인은 날짜로 자동 선택(3일마다 바뀜)
-python3 reel.py ../queue/YYYY-MM-DD-1-… ../queue/YYYY-MM-DD-2-…      # 같은 카드로 릴스 영상(reel.mp4)도 만든다
+node reel.mjs ../queue/YYYY-MM-DD-1-… ../queue/YYYY-MM-DD-2-…      # 릴스 전용 세로 영상(reel.mp4): 글이 한 줄씩 천천히 나타나는 영상 (카드 이어 붙이기 아님)
 ```
 - 카드 게시물이 올라갈 때 릴스도 함께 올라간다. 인스타가 격자에도 보여 주므로 사용자가 앱에서 직접 숨긴다.
+- 릴스는 **천천히, 읽을 수 있게**(사용자 피드백: 너무 빨라서 못 읽음) + **카드를 이어 붙인 느낌이 나지 않게**. reel.mjs가 글자 수에 맞춰 장면 길이를 정한다. 옛 reel.py는 쓰지 않는다.
 - 릴스에는 **배경음악을 넣지 않는다**(사용자 요청). `tools/bgm.py`는 나중에 쓸 수 있게 남겨 둔 것.
 - 만든 카드를 montage로 한 장에 모아 **직접 눈으로 확인**한다: 글자 넘침·잘림, 오타, 사실.
 - 문제가 있으면 원고를 고치고 다시 만든다.

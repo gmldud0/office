@@ -268,7 +268,7 @@ for (const post of pack.posts) {
     await page.screenshot({ path: path.join(dir, name), type: 'jpeg', quality: 90 });
     images.push(name);
   }
-  writeFileSync(path.join(dir, 'post.json'), JSON.stringify({ caption: post.caption, images }, null, 2) + '\n');
+  writeFileSync(path.join(dir, 'post.json'), JSON.stringify({ caption: post.caption, images, slides: post.slides, brand }, null, 2) + '\n');
   console.log(`✓ ${post.id} (${images.length}장, 디자인: ${v2 ? 'v2 ' + col.name : theme.name})`);
 }
 rmSync(tmp, { force: true });
