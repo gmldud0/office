@@ -96,19 +96,27 @@ const scenes = {
     ${E('🍗', 90, 560, 170, 10)}${E('🍕', 520, 160, 120, 20)}${E('🧾', 380, 150, 120, -8)}
     <div style="position:absolute;left:120px;top:100px;background:#ffeb3b;border:6px solid #3b2a20;border-radius:30px;padding:10px 26px;font:56px Jua;color:#3b2a20;transform:rotate(-6deg)">주문 완료!</div>`,
 };
+// 실제 사진(무료 라이선스, assets/photos). CC BY는 카드 안에 작게 출처 표시.
+const credits = JSON.parse(fs.readFileSync(path.resolve(here, '..', 'assets/photos/credits.json'), 'utf8'));
+const photo = (name) => pathToFileURL(path.resolve(here, '..', 'assets/photos', `${name}.jpg`)).href;
 const relate = [
-  ['cook', '요리', '나는 요리를 잘한다고 생각함', ['라면에 계란 넣으면 요리라고 믿음', '설거지는 내일의 내가 함']],
-  ['laundry', '빨래', '나는 빨래를 자주 한다고 생각함', ['건조대에서 바로 꺼내 입는 게 국룰', '양말 짝은 원래 안 맞음']],
-  ['delivery', '배달', '나는 배달을 줄였다고 생각함', ['최소 주문 금액 맞추다 2인분 시킴', '"이번 주만"이 4주째']],
+  ['ramen-egg', '요리', '나는 요리를 잘한다고 생각함', ['라면에 계란 넣으면 요리라고 믿음', '설거지는 내일의 내가 함']],
+  ['clothes-bed', '빨래', '나는 빨래를 자주 한다고 생각함', ['건조대에서 바로 꺼내 입는 게 국룰', '침대 위 옷 산은 "정리 중"']],
+  ['fried-chicken-takeout', '배달', '나는 배달을 줄였다고 생각함', ['최소 주문 금액 맞추다 2인분 시킴', '"이번 주만"이 4주째']],
 ];
-for (const [scene, name, pill, lines] of relate) {
-  slides.push(`<style>body{background:#111}</style>${scenes[scene]}${logo}
-    <div style="position:absolute;left:0;right:0;top:820px;height:120px;background:linear-gradient(rgba(17,17,17,0),#111)"></div>
-    <div style="position:absolute;left:0;right:0;bottom:60px;text-align:center">
+for (const [ph, name, pill, lines] of relate) {
+  const c = credits[ph];
+  const credit = c.license === 'pdm' || c.license === 'cc0' ? '' : `사진: ${c.creator} / CC ${c.license.toUpperCase()} ${c.license_version}`;
+  slides.push(`<style>body{background:#111}</style>
+    <div style="position:absolute;inset:0;background:url('${photo(ph)}') center 30%/cover"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;height:720px;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.78) 38%,rgba(0,0,0,.92))"></div>
+    ${logo}
+    <div style="position:absolute;left:0;right:0;bottom:70px;text-align:center">
       <div style="display:inline-block;transform:rotate(-3deg)">${sticker(name, 150, { font: 'BHS', fill: '#3b2a20', stroke: '#fff', outer: '#fff', drop: '#7ec8e3' })}</div>
       <div style="margin:24px 70px 28px;background:#fff;border-radius:999px;padding:20px 30px;font:60px Jua;color:#3b2a20">${esc(pill)}</div>
       ${lines.map((l) => `<div style="font:56px/1.45 Jua;color:#fff">${esc(l)}</div>`).join('')}
-    </div>`);
+    </div>
+    ${credit ? `<div style="position:absolute;right:30px;bottom:18px;font:22px Jua;color:rgba(255,255,255,.6)">${esc(credit)}</div>` : ''}`);
 }
 
 // 5. 모눈 노트 카드: 점선 노란 상자 + 숫자에 빨간 동그라미

@@ -1,0 +1,35 @@
+{
+  "ramen-egg": {
+    "id": "403234c3-1f02-4387-bd33-31a41b56f041",
+    "title": "Ramen Egg Meat",
+    "creator": "manchesterunitedbowie",
+    "license": "pdm",
+    "license_version": "1.0",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "foreign_landing_url": "https://www.flickr.com/photos/60374260@N05/30686229373",
+    "provider": "flickr",
+    "attribution": "\"Ramen Egg Meat\" by manchesterunitedbowie is marked with Public Domain Mark 1.0. To view the terms, visit https://creativecommons.org/publicdomain/mark/1.0/."
+  },
+  "clothes-bed": {
+    "id": "ac6005c7-b040-4ae9-9cc1-3c631068489e",
+    "title": "Clothing Bomb! OMG so excited!",
+    "creator": "goblinbox_(queen_of_ad_hoc_bento)",
+    "license": "by",
+    "license_version": "2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0/",
+    "foreign_landing_url": "https://www.flickr.com/photos/25977089@N00/4905582518",
+    "provider": "flickr",
+    "attribution": "\"Clothing Bomb! OMG so excited!\" by goblinbox_(queen_of_ad_hoc_bento) is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/."
+  },
+  "fried-chicken-takeout": {
+    "id": "bf217f02-ada5-47af-b6dd-dde8b1db5418",
+    "title": "Southern-Fried Dinner",
+    "creator": "jeffgunn",
+    "license": "by",
+    "license_version": "2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0/",
+    "foreign_landing_url": "https://www.flickr.com/photos/25483059@N08/4214267175",
+    "provider": "flickr",
+    "attribution": "\"Southern-Fried Dinner\" by jeffgunn is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/."
+  }
+}
