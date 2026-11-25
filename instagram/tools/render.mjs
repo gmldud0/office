@@ -39,10 +39,10 @@ export const THEMES = [
 ];
 // 표지(스티커 스타일)용 색. THEMES와 같은 순서.
 const STICKERS = [
-  { bg: 'radial-gradient(circle at 50% 35%,#2f3f66 0,#1F2A44 70%)', fill: '#FFFFFF', hl: 'linear-gradient(#FFE08A,#FF9A3D)', stroke: '#0E1426', outer: '#FF7A59', kick: '#FF7A59' },
-  { bg: 'repeating-linear-gradient(45deg,#FFDF5E 0 60px,#FFD84D 60px 120px)', fill: '#FFFFFF', hl: 'linear-gradient(#8DB5FF,#2F5BEA)', stroke: '#1B1B1B', outer: '#1B1B1B', kick: '#2F5BEA' },
-  { bg: 'radial-gradient(circle at 50% 30%,#7a6cf0 0,#5B4BDB 70%)', fill: '#FFFFFF', hl: 'linear-gradient(#FFE0EE,#FF7AB6)', stroke: '#26205A', outer: '#FFFFFF', kick: '#FF7AB6' },
-  { bg: '#141414', fill: '#FFFFFF', hl: 'linear-gradient(#EFFF8A,#A5E000)', stroke: '#141414', outer: '#FFFFFF', kick: '#4D7C0F' },
+  { bg: 'radial-gradient(circle at 50% 35%,#2f3f66 0,#1F2A44 70%)', fill: '#FFFFFF', hl: 'linear-gradient(#FFE08A,#FF9A3D)', stroke: '#0E1426', outer: '#FF7A59', kick: '#FF7A59', popBg: '#FF7A59', popHl: 'linear-gradient(#FFF27A,#FFD400)' },
+  { bg: 'repeating-linear-gradient(45deg,#FFDF5E 0 60px,#FFD84D 60px 120px)', fill: '#FFFFFF', hl: 'linear-gradient(#8DB5FF,#2F5BEA)', stroke: '#1B1B1B', outer: '#1B1B1B', kick: '#2F5BEA', popBg: '#2F5BEA', popHl: 'linear-gradient(#FFF27A,#FFD400)' },
+  { bg: 'radial-gradient(circle at 50% 30%,#7a6cf0 0,#5B4BDB 70%)', fill: '#FFFFFF', hl: 'linear-gradient(#FFE0EE,#FF7AB6)', stroke: '#26205A', outer: '#FFFFFF', kick: '#FF7AB6', popBg: '#FF7AB6', popHl: 'linear-gradient(#FFF27A,#FFD400)' },
+  { bg: '#141414', fill: '#FFFFFF', hl: 'linear-gradient(#EFFF8A,#A5E000)', stroke: '#141414', outer: '#FFFFFF', kick: '#4D7C0F', popBg: '#C6F432', popHl: 'linear-gradient(#FFFFFF,#FFFFFF)' },
 ];
 
 // 둥근 스티커 테두리: text-shadow를 원 모양으로 여러 겹 깔아 만든다.
@@ -74,7 +74,22 @@ const EMOJI_SPOTS = [
   'left:50px;top:120px;transform:rotate(-12deg)', 'right:60px;top:130px;transform:rotate(10deg)',
   'left:80px;bottom:200px;transform:rotate(8deg)', 'right:80px;bottom:190px;transform:rotate(-8deg)',
 ];
-function stickerCover(slide, n, c) {
+function stickerCover(slide, n, c0) {
+  const st = slide.style ?? 'clean';
+  // clean: 테두리 한 겹, 이모지 하나 크게, 작은 말머리 / pop: 강조색 배경 / sticker: 처음 시안(두 겹 테두리, 이모지 4개)
+  const c = st === 'sticker' ? c0 : st === 'pop'
+    ? { ...c0, bg: c0.popBg, fill: '#FFFFFF', hl: c0.popHl, stroke: '#141414', outer: '#141414' }
+    : { ...c0, outer: c0.stroke };
+  if (st !== 'sticker') {
+    const lines = String(slide.title).split('\n');
+    const w = (l) => [...l.replace(/\*\*/g, '')].reduce((a, ch) => a + (ch === ' ' ? 0.4 : /[A-Za-z0-9]/.test(ch) ? 0.62 : 1), 0);
+    const size = Math.min(250, Math.floor(940 / Math.max(Math.max(...lines.map(w)), 3)));
+    const emo = slide.emoji?.[0] ? `<div class="emo1">${esc(slide.emoji[0])}</div>` : '';
+    const kick = slide.kicker ? `<div class="pill" style="background:${c.stroke};color:#fff">${esc(slide.kicker)}</div>` : '';
+    const sub = slide.sub ? `<div class="csub" style="color:${st === 'pop' ? '#141414' : c.fill}">${esc(slide.sub).replace(/\n/g, ' ')}</div>` : '';
+    return `<style>body{background:${c.bg} !important}</style>
+      <div class="stxt">${emo}${kick}${lines.map((l) => stickerLine(l, size, 'BHS', c)).join('')}${sub}</div>`;
+  }
   const lines = String(slide.title).split('\n');
   // 글자 수로 크기 맞추기 (빈칸은 0.4자, 이모지는 1자)
   const w = (l) => [...l.replace(/\*\*/g, '')].reduce((a, ch) => a + (ch === ' ' ? 0.4 : /[A-Za-z0-9]/.test(ch) ? 0.62 : 1), 0);
@@ -181,6 +196,9 @@ function slideHtml(slide, i, total, brand, t, c) {
   .l { display: block; letter-spacing: -2px; }
   .l.o { filter: drop-shadow(0 14px 0 rgba(0,0,0,.22)); }
   .l + .l { position: absolute; inset: 0; }
+  .emo1 { font-family: 'Noto Color Emoji'; font-size: 190px; line-height: 1; margin-bottom: 30px; filter: drop-shadow(0 10px 0 rgba(0,0,0,.2)); }
+  .pill { display: inline-block; font-size: 44px; font-weight: 900; padding: 14px 34px; border-radius: 999px; margin-bottom: 26px; }
+  .csub { margin-top: 40px; font-size: 46px; font-weight: 700; opacity: .9; }
   .ssub { display: inline-block; margin-top: 34px; font-size: 40px; font-weight: 700; padding: 14px 30px; border-radius: 999px; }
   .page { position: absolute; bottom: 60px; right: 96px; font-size: 30px; font-weight: 700; opacity: .5; }
 </style></head><body>
