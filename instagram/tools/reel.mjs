@@ -20,7 +20,7 @@ const MIN_SCENE = 3.2, MAX_SCENE = 8;
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const plain = (s) => String(s ?? '').replace(/\*\*/g, '').replace(/\(\(|\)\)/g, '');
 const rich = (s, hl) => esc(s).replace(/\(\(([\s\S]+?)\)\)/g, `<b style="color:#e53935">$1</b>`)
-  .replace(/\*\*([\s\S]+?)\*\*/g, `<b style="color:${hl}">$1</b>`).replace(/\n/g, '<br>');
+  .replace(/\*\*([\s\S]+?)\*\*/g, `<b class="hlt" style="--hl:${hl}">$1</b>`).replace(/\n/g, '<br>');
 function ring(r, color, step = 3) {
   const sh = [];
   for (let rr = 2; rr <= r; rr += step) {
@@ -104,6 +104,10 @@ function page(sc, title, col, t0, tEnd, idx, total) {
   *{margin:0;box-sizing:border-box}
   html,body{width:${W}px;height:${H}px;overflow:hidden}
   body{position:relative;font-family:Jua,sans-serif;background:${col.a};color:#1b1b1b}
+  b{font-weight:normal}
+  b.hlt{background:linear-gradient(transparent 55%, ${col.hl} 55% 92%, transparent 92%)}
+  .mid b.hlt,.line b.hlt,.ask b.hlt{background:none;color:${col.hl}}
+  body *{word-break:keep-all}
   .burst{position:absolute;inset:0;background-color:${col.a};background-image:radial-gradient(${col.b} 7px, transparent 8px);background-size:52px 52px}
   .glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,#fff 0,rgba(255,255,255,0) 45%)}
   .soft{position:absolute;inset:0;background-color:${col.a};background-image:radial-gradient(${col.b} 7px, transparent 8px);background-size:52px 52px}
@@ -123,7 +127,7 @@ function page(sc, title, col, t0, tEnd, idx, total) {
   .big{display:inline-block;font-family:BHS;font-size:130px;line-height:1.1;color:#fff;background:${col.ink};padding:.12em .4em .18em;margin:10px 0;clip-path:polygon(0 8%,2% 0,98% 0,100% 8%,100% 92%,98% 100%,2% 100%,0 92%)}
   .big.hl{background:${col.hl};color:${col.ink}}
   .mid{display:inline-block;font-family:BHS;font-size:96px;line-height:1.18;margin-bottom:30px;color:#fff;background:${col.ink};padding:.08em .4em .14em}
-  .mid b{color:${col.hl} !important}
+
   .sub{font-size:56px;line-height:1.5;margin-bottom:40px;color:#1b1b1b;background:#fffdf7;padding:20px 28px;border-radius:20px}
   .item{background:#fffdf7;border-bottom:5px dashed #cfcac0;padding:30px 30px;margin:0;font-size:56px;line-height:1.35;text-align:left}
   .item:first-of-type{border-radius:20px 20px 0 0}

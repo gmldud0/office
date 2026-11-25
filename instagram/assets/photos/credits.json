@@ -31,5 +31,27 @@
     "foreign_landing_url": "https://www.flickr.com/photos/25483059@N08/4214267175",
     "provider": "flickr",
     "attribution": "\"Southern-Fried Dinner\" by jeffgunn is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/."
+  },
+  "fruit-mochi": {
+    "id": "f01ce61a-8d85-45e5-89de-d8a5bb5d12f2",
+    "title": "passion fruit mochi",
+    "creator": "Studio Sarah Lou",
+    "license": "by",
+    "license_version": "2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0/",
+    "foreign_landing_url": "https://www.flickr.com/photos/86665756@N00/16256432355",
+    "provider": "flickr",
+    "attribution": "\"passion fruit mochi\" by Studio Sarah Lou is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/."
+  },
+  "humidifier": {
+    "id": "556c5448-3fce-4f36-81fd-4e3e0544a674",
+    "title": "Humidifier",
+    "creator": "Editor B",
+    "license": "by",
+    "license_version": "2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0/",
+    "foreign_landing_url": "https://www.flickr.com/photos/11018968@N00/6718077777",
+    "provider": "flickr",
+    "attribution": "\"Humidifier\" by Editor B is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/."
   }
 }

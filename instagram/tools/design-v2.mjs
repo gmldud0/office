@@ -79,7 +79,7 @@ export function slideV2(slide, i, total, brand, c, here, fontUrl) {
     const tl = String(slide.title ?? '').split('\n');
     const head = `<div class="r-head"><b>YOZMBOM</b> 꿀팁 영수증<span>No.${String(i + 1).padStart(3, '0')}</span></div><div class="dash"></div>`;
     const title = `${slide.num ? `<div class="r-num">${esc(slide.num)}</div>` : ''}
-      <div class="r-title" style="font-size:${fit(tl, 84, 760)}px">${tl.map((l) => rich(l, c)).join('<br>')}</div>`;
+      <div class="r-title" style="font-size:${fit(tl, 96, 760)}px">${tl.map((l) => rich(l, c)).join('<br>')}</div>`;
     let inner;
     if (slide.type === 'end') {
       inner = `${head}${title}
@@ -109,6 +109,8 @@ export function slideV2(slide, i, total, brand, c, here, fontUrl) {
   *{margin:0;box-sizing:border-box}
   html,body{width:1080px;height:1350px;overflow:hidden}
   body{position:relative;font-family:Jua,sans-serif;background:${c.a};color:${c.ink}}
+  b,mark{font-weight:normal}
+  body *{word-break:keep-all;overflow-wrap:break-word}
   .dots{position:absolute;inset:0;background-color:${c.a};background-image:radial-gradient(${c.b} 6px, transparent 7px);background-size:44px 44px}
   .full{position:absolute;inset:0;background:center 35%/cover}
   .shade{position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.15),rgba(0,0,0,0) 30%,rgba(0,0,0,.55) 60%,rgba(0,0,0,.85))}
@@ -134,7 +136,7 @@ export function slideV2(slide, i, total, brand, c, here, fontUrl) {
   .mt{position:absolute;width:160px;height:46px;background:rgba(255,255,255,.7)}
   .mt1{left:-50px;top:30px;transform:rotate(-35deg)}
   .mt2{right:-50px;bottom:40px;transform:rotate(-35deg)}
-  .receipt{position:absolute;left:110px;right:110px;top:130px;bottom:90px;background:#fffdf7;padding:56px 56px 40px;display:flex;flex-direction:column;
+  .receipt{position:absolute;left:90px;right:90px;top:130px;bottom:80px;background:#fffdf7;padding:56px 56px 40px;display:flex;flex-direction:column;
     box-shadow:0 26px 50px rgba(0,0,0,.2);
     -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/36px 100%, conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) 50%/36px 100%;
     -webkit-mask-composite:source-in;mask-composite:intersect}
@@ -145,11 +147,11 @@ export function slideV2(slide, i, total, brand, c, here, fontUrl) {
   .r-num{align-self:flex-start;background:${c.ink};color:#fff;font-size:32px;padding:6px 18px;border-radius:8px;margin-bottom:14px}
   .r-title{font-family:BHS;line-height:1.2;margin-bottom:18px}
   .r-title b{background:linear-gradient(transparent 60%, ${c.hl} 60%) !important}
-  .r-body{font-size:46px;line-height:1.5;margin-bottom:6px}
-  .r-row{display:flex;gap:22px;align-items:flex-start;font-size:46px;line-height:1.38;padding:16px 0;border-bottom:3px dotted #e2ddd3}
-  .r-i{flex:none;font-family:BHS;color:#fff;background:${c.ink};border-radius:10px;padding:2px 12px;font-size:34px;margin-top:6px}
+  .r-body{font-size:52px;line-height:1.5;margin-bottom:6px}
+  .r-row{display:flex;gap:22px;align-items:flex-start;font-size:54px;line-height:1.38;padding:24px 0;border-bottom:3px dotted #e2ddd3}
+  .r-i{flex:none;font-family:BHS;color:#fff;background:${c.ink};border-radius:10px;padding:2px 12px;font-size:38px;margin-top:8px}
   .r-t{flex:1}
-  .r-note{font-size:32px;color:#888;line-height:1.4}
+  .r-note{font-size:36px;color:#888;line-height:1.4}
   .r-next{margin-top:18px;align-self:flex-end;font-size:38px;background:${c.hl};padding:8px 22px;border-radius:8px}
   .r-ask{margin-top:24px;background:${c.ink};color:#fff;font-size:44px;line-height:1.45;padding:26px 30px;border-radius:24px}
   .r-ask b{color:${c.ink}}
