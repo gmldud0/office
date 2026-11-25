@@ -80,7 +80,8 @@ jobs:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           IG_USER_ID: ${{ vars.IG_USER_ID }}
           GRAPH_BASE: ${{ vars.GRAPH_BASE }}
-          REEL_BASE_URL: https://gmldud0.github.io/office
+          # 릴스 자동 게시: 인스타가 릴스를 프로필 격자에도 보여 줘서(share_to_feed=false여도) 잠시 끔. 다시 켜려면 아래 줄 앞의 # 제거
+          # REEL_BASE_URL: https://gmldud0.github.io/office
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
           FORCE_NEXT: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
         run: python3 instagram/publish.py publish
