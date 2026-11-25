@@ -37,18 +37,74 @@ export const THEMES = [
   { name: '검정 · 라임', coverBg: '#141414', coverFg: '#FFFFFF', coverHl: '#C6F432', kickerFg: '#141414', bodyBg: '#F5F5EF', bodyFg: '#141414',
     accent: '#141414', accentFg: '#C6F432', hl: '#4D7C0F', ctaBg: '#141414', ctaFg: '#C6F432', bullet: '0', line: 'rgba(0,0,0,.1)' },
 ];
-function themeFor(id) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(id);
-  if (!m) return THEMES[0];
-  const days = Math.floor((Date.UTC(+m[1], +m[2] - 1, +m[3]) - THEME_START) / 86400000);
-  const n = Math.floor(days / THEME_DAYS);
-  return THEMES[((n % THEMES.length) + THEMES.length) % THEMES.length];
+// 표지(스티커 스타일)용 색. THEMES와 같은 순서.
+const STICKERS = [
+  { bg: 'radial-gradient(circle at 50% 35%,#2f3f66 0,#1F2A44 70%)', fill: '#FFFFFF', hl: 'linear-gradient(#FFE08A,#FF9A3D)', stroke: '#0E1426', outer: '#FF7A59', kick: '#FF7A59' },
+  { bg: 'repeating-linear-gradient(45deg,#FFDF5E 0 60px,#FFD84D 60px 120px)', fill: '#FFFFFF', hl: 'linear-gradient(#8DB5FF,#2F5BEA)', stroke: '#1B1B1B', outer: '#1B1B1B', kick: '#2F5BEA' },
+  { bg: 'radial-gradient(circle at 50% 30%,#7a6cf0 0,#5B4BDB 70%)', fill: '#FFFFFF', hl: 'linear-gradient(#FFE0EE,#FF7AB6)', stroke: '#26205A', outer: '#FFFFFF', kick: '#FF7AB6' },
+  { bg: '#141414', fill: '#FFFFFF', hl: 'linear-gradient(#EFFF8A,#A5E000)', stroke: '#141414', outer: '#FFFFFF', kick: '#4D7C0F' },
+];
+
+// 둥근 스티커 테두리: text-shadow를 원 모양으로 여러 겹 깔아 만든다.
+function ring(r, color) {
+  const sh = [];
+  for (let rr = 2; rr <= r; rr += 3) {
+    const n = Math.max(12, Math.round(rr * 1.6));
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      sh.push(`${(Math.cos(a) * rr).toFixed(1)}px ${(Math.sin(a) * rr).toFixed(1)}px 0 ${color}`);
+    }
+  }
+  return sh.join(',');
+}
+const grad = (f) => /gradient/.test(f) ? `background:${f};-webkit-background-clip:text;background-clip:text;color:transparent` : `color:${f}`;
+// 한 줄을 3겹(바깥 테두리 / 안쪽 테두리 / 글자)으로. **강조**는 hl 색.
+function stickerLine(line, size, font, c, plainFill = c.fill) {
+  const s = Math.max(6, Math.round(size * 0.07));
+  const parts = [];
+  esc(line).replace(/\*\*([\s\S]+?)\*\*|([^*]+|\*)/g, (_, b, p) => { parts.push(b != null ? [b, true] : [p, false]); return ''; });
+  const fillSpans = parts.map(([x, b]) => `<span style="${grad(b ? c.hl : plainFill)}">${x}</span>`).join('');
+  const raw = parts.map(([x]) => x).join('');
+  return `<div class="ln" style="font-size:${size}px;font-family:${font}">
+    <span class="l o" style="color:${c.outer};text-shadow:${ring(s * 2 + 4, c.outer)}">${raw}</span>
+    <span class="l" style="color:${c.stroke};text-shadow:${ring(s, c.stroke)}">${raw}</span>
+    <span class="l">${fillSpans}</span></div>`;
+}
+const EMOJI_SPOTS = [
+  'left:50px;top:120px;transform:rotate(-12deg)', 'right:60px;top:130px;transform:rotate(10deg)',
+  'left:80px;bottom:200px;transform:rotate(8deg)', 'right:80px;bottom:190px;transform:rotate(-8deg)',
+];
+function stickerCover(slide, n, c) {
+  const lines = String(slide.title).split('\n');
+  // 글자 수로 크기 맞추기 (빈칸은 0.4자, 이모지는 1자)
+  const w = (l) => [...l.replace(/\*\*/g, '')].reduce((a, ch) => a + (ch === ' ' ? 0.4 : /[A-Za-z0-9]/.test(ch) ? 0.62 : 1), 0);
+  const longest = Math.max(...lines.map(w));
+  const size = Math.min(260, Math.floor(960 / Math.max(longest, 3)));
+  const emo = (slide.emoji ?? []).slice(0, 4).map((e, i) =>
+    `<div class="emo" style="${EMOJI_SPOTS[i]};font-size:${i < 2 ? 170 : 140}px">${esc(e)}</div>`).join('');
+  const img = slide.src ? `<img class="phone" src="${pathToFileURL(path.resolve(here, '..', slide.src)).href}">` : '';
+  const kick = slide.kicker ? stickerLine(slide.kicker, 80, 'Gaegu', { ...c, fill: '#fff', hl: '#fff', stroke: c.kick, outer: c.kick }, '#fff') : '';
+  const sub = slide.sub ? `<div class="ssub" style="background:${c.stroke};color:#fff">${esc(slide.sub).replace(/\n/g, ' ')}</div>` : '';
+  return `${emo}${img}
+    <div class="stxt${slide.src ? ' low' : ''}">${kick}${lines.map((l) => stickerLine(l, size, 'BHS', c)).join('')}${sub}</div>`;
 }
 
-function slideHtml(slide, i, total, brand, t) {
+function themeFor(id) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(id);
+  if (!m) return { ...THEMES[0], sticker: STICKERS[0] };
+  const days = Math.floor((Date.UTC(+m[1], +m[2] - 1, +m[3]) - THEME_START) / 86400000);
+  const n = Math.floor(days / THEME_DAYS);
+  const k = ((n % THEMES.length) + THEMES.length) % THEMES.length;
+  return { ...THEMES[k], sticker: STICKERS[k] };
+}
+
+function slideHtml(slide, i, total, brand, t, c) {
+  const sticker = slide.type === 'cover' && slide.style !== 'plain';
   const cover = slide.type === 'cover';
   let inner = '';
-  if (slide.type === 'cover') {
+  if (sticker) {
+    inner = stickerCover(slide, i, c);
+  } else if (slide.type === 'cover') {
     inner = `
       <div class="kicker">${esc(slide.kicker ?? '')}</div>
       <h1 class="cover">${rich(slide.title)}</h1>
@@ -66,6 +122,8 @@ function slideHtml(slide, i, total, brand, t) {
     inner = `
       <h2 class="end">${rich(slide.title ?? '도움이 됐다면\n저장해 두세요')}</h2>
       <p class="sub">${rich(slide.sub ?? '필요할 때 바로 꺼내 볼 수 있어요.')}</p>
+      ${slide.ask ? `<div class="ask">💬 ${rich(slide.ask)}</div>` : ''}
+      <div class="acts"><span>📤 단톡방에 공유</span><span>📌 저장</span></div>
       <div class="cta">${esc(brand.cta)}</div>`;
   } else {
     const items = (slide.items ?? []).map((t) => `<li>${rich(t)}</li>`).join('');
@@ -79,9 +137,11 @@ function slideHtml(slide, i, total, brand, t) {
   return `<!doctype html><html><head><meta charset="utf-8">
 <link rel="stylesheet" href="${fontCss(400)}"><link rel="stylesheet" href="${fontCss(700)}"><link rel="stylesheet" href="${fontCss(900)}">
 <style>
+  @font-face { font-family: BHS; src: url(${pathToFileURL(path.join(here, 'fonts/BlackHanSans.woff2')).href}); }
+  @font-face { font-family: Gaegu; src: url(${pathToFileURL(path.join(here, 'fonts/Gaegu.woff2')).href}); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 1080px; height: 1350px; }
-  body { font-family: 'Noto Sans KR', sans-serif; background: ${cover ? t.coverBg : t.bodyBg};
+  body { font-family: 'Noto Sans KR', sans-serif; background: ${sticker ? c.bg : cover ? t.coverBg : t.bodyBg};
          color: ${cover ? t.coverFg : t.bodyFg}; position: relative; overflow: hidden; }
   .wrap { position: absolute; inset: 110px 96px 150px; display: flex; flex-direction: column; justify-content: center; }
   .top { position: absolute; top: 56px; left: 96px; right: 96px; display: flex; justify-content: space-between;
@@ -108,10 +168,24 @@ function slideHtml(slide, i, total, brand, t) {
   .img-sub { font-size: 36px; line-height: 1.45; opacity: .8; margin-bottom: 30px; }
   .shot { flex: 1; min-height: 0; display: flex; justify-content: center; align-items: flex-start; }
   .shot img { max-height: 100%; max-width: 100%; border-radius: 40px; border: 8px solid #fff; box-shadow: 0 24px 60px rgba(0,0,0,.18); }
+  .ask { margin-top: 50px; font-size: 44px; font-weight: 700; line-height: 1.45; background: ${t.accent}; color: ${t.accentFg}; padding: 30px 40px; border-radius: 34px 34px 34px 8px; }
+  .acts { margin-top: 36px; display: flex; gap: 20px; font-size: 36px; font-weight: 700; }
+  .acts span { border: 3px solid currentColor; padding: 14px 26px; border-radius: 999px; opacity: .8; }
+  .acts + .cta { margin-top: 36px; }
+  .emo { position: absolute; font-family: 'Noto Color Emoji'; filter: drop-shadow(0 8px 0 rgba(0,0,0,.18)); }
+  .phone { position: absolute; left: 50%; top: 150px; width: 430px; transform: translateX(-50%) rotate(-4deg); border-radius: 46px; border: 10px solid #fff; box-shadow: 0 30px 60px rgba(0,0,0,.25); }
+  .stxt { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; }
+  .stxt.low { top: auto; bottom: 120px; transform: none; }
+  .ln { position: relative; line-height: 1.1; white-space: nowrap; }
+  .ln + .ln { margin-top: -4px; }
+  .l { display: block; letter-spacing: -2px; }
+  .l.o { filter: drop-shadow(0 14px 0 rgba(0,0,0,.22)); }
+  .l + .l { position: absolute; inset: 0; }
+  .ssub { display: inline-block; margin-top: 34px; font-size: 40px; font-weight: 700; padding: 14px 30px; border-radius: 999px; }
   .page { position: absolute; bottom: 60px; right: 96px; font-size: 30px; font-weight: 700; opacity: .5; }
 </style></head><body>
   <div class="top"><span class="brand">${esc(brand.name)}</span><span>${esc(brand.topic ?? '')}</span></div>
-  <div class="wrap${slide.type === 'image' ? ' img' : ''}">${inner}</div>
+  ${sticker ? inner : `<div class="wrap${slide.type === 'image' ? ' img' : ''}">${inner}</div>`}
   <div class="page">${i + 1} / ${total}</div>
 </body></html>`;
 }
@@ -139,7 +213,7 @@ for (const post of pack.posts) {
   const images = [];
   const theme = themeFor(post.id);
   for (const [i, slide] of post.slides.entries()) {
-    writeFileSync(tmp, slideHtml(slide, i, post.slides.length, brand, theme));
+    writeFileSync(tmp, slideHtml(slide, i, post.slides.length, brand, theme, theme.sticker));
     await page.goto(pathToFileURL(tmp).href);
     await page.evaluate(() => document.fonts.ready);
     const name = `${String(i + 1).padStart(2, '0')}.jpg`;
