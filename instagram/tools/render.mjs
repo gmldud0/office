@@ -6,6 +6,7 @@ import { execSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { slideV2, V2_COLORS } from './design-v2.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const queueDir = process.env.QUEUE_DIR ? path.resolve(process.env.QUEUE_DIR) : path.resolve(here, '..', 'queue');
@@ -27,6 +28,7 @@ const fontCss = (w) => pathToFileURL(path.join(here, 'node_modules/@fontsource/n
 // 2026-11-24~26 → 0번, 27~29 → 1번, 11-30~12-02 → 2번, 12-03~05 → 3번, 그다음 다시 0번.
 const THEME_START = Date.UTC(2026, 10, 24);
 const THEME_DAYS = 3;
+const V2_START = '2026-11-27';
 export const THEMES = [
   { name: '남색 · 주황', coverBg: '#1F2A44', coverFg: '#FFF6EC', coverHl: '#FF7A59', kickerFg: '#FFFFFF', bodyBg: '#FFF6EC', bodyFg: '#1F2A44',
     accent: '#FF7A59', accentFg: '#FFFFFF', hl: '#FF7A59', ctaBg: '#1F2A44', ctaFg: '#FFF6EC', bullet: '8px', line: 'rgba(31,42,68,.1)' },
@@ -253,8 +255,13 @@ for (const post of pack.posts) {
   mkdirSync(dir, { recursive: true });
   const images = [];
   const theme = themeFor(post.id);
+  // 2026-11-27부터 디자인 v2 (집중선 표지 + 실제 사진 공감 카드 + 모눈 노트). design: "v1"이면 예전 디자인.
+  const v2 = (post.design ?? (post.id.slice(0, 10) >= V2_START ? 'v2' : 'v1')) === 'v2';
+  const col = V2_COLORS[THEMES.indexOf(THEMES.find((x) => x.name === theme.name))];
   for (const [i, slide] of post.slides.entries()) {
-    writeFileSync(tmp, slideHtml(slide, i, post.slides.length, brand, theme, theme.sticker));
+    writeFileSync(tmp, v2
+      ? slideV2(slide, i, post.slides.length, brand, col, here, (f) => pathToFileURL(path.join(here, 'fonts', f)).href)
+      : slideHtml(slide, i, post.slides.length, brand, theme, theme.sticker));
     await page.goto(pathToFileURL(tmp).href);
     await page.evaluate(() => document.fonts.ready);
     const name = `${String(i + 1).padStart(2, '0')}.jpg`;
@@ -262,7 +269,7 @@ for (const post of pack.posts) {
     images.push(name);
   }
   writeFileSync(path.join(dir, 'post.json'), JSON.stringify({ caption: post.caption, images }, null, 2) + '\n');
-  console.log(`✓ ${post.id} (${images.length}장, 디자인: ${theme.name})`);
+  console.log(`✓ ${post.id} (${images.length}장, 디자인: ${v2 ? 'v2 ' + col.name : theme.name})`);
 }
 rmSync(tmp, { force: true });
 await browser.close();
