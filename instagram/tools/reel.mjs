@@ -32,7 +32,9 @@ function ring(r, color, step = 3) {
 const font = (f) => pathToFileURL(path.join(here, 'fonts', f)).href;
 const asset = (p) => pathToFileURL(path.resolve(here, '..', p)).href;
 
+const NAVY = { name: '남색', a: '#1F2A44', b: '#26335a', hl: '#FF7A59', drop: '#FFC1A8', ink: '#0E1426' };
 function colorsFor(name) {
+  if (name.slice(0, 10) < '2026-11-27') return NAVY;  // 예전 디자인(남색) 게시물
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(name);
   const days = m ? Math.floor((Date.UTC(+m[1], +m[2] - 1, +m[3]) - Date.UTC(2026, 10, 24)) / 86400000) : 0;
   const k = ((Math.floor(days / 3) % 4) + 4) % 4;
@@ -47,13 +49,15 @@ function scenes(post, col) {
   for (const s of post.slides) {
     if (s.type === 'cover') {
       const lines = String(s.title).split('\n');
+      const wid = (l) => [...plain(l)].reduce((t, ch) => t + (ch === ' ' ? 0.4 : /[A-Za-z0-9,.]/.test(ch) ? 0.6 : 1), 0);
+      const bigSize = Math.min(130, Math.floor(820 / Math.max(3, ...lines.map(wid))));
       const visual = s.src
         ? `<div class="kb" style="background-image:url('${asset(s.src)}')"></div><div class="dim"></div>`
-        : `<div class="burst"></div><div class="emo in pop" style="--d:.1s;font-size:420px;top:300px">${esc((s.emoji ?? ['✨'])[0])}</div>`;
+        : (s.emoji ? `<div class="burst"></div><div class="emo in pop" style="--d:.1s;font-size:420px;top:300px">${esc(s.emoji[0])}</div>` : `<div class="burst"></div>`);
       out.push({ dur: dur(plain(s.title).length + 6, 0.6), html: `${visual}
         <div class="center" style="top:${s.src ? 900 : 860}px">
           ${s.kicker ? `<div class="kick in" style="--d:.2s">${esc(s.kicker)}</div><br>` : ''}
-          ${lines.map((l, i) => `<div class="big in pop${i === lines.length - 1 || /\*\*/.test(l) ? ' hl' : ''}" style="--d:${0.5 + i * 0.45}s">${esc(plain(l))}</div><br>`).join('')}
+          ${lines.map((l, i) => `<div class="big in pop${i === lines.length - 1 || /\*\*/.test(l) ? ' hl' : ''}" style="--d:${0.5 + i * 0.45}s;font-size:${bigSize}px">${esc(plain(l))}</div><br>`).join('')}
         </div>`, header: false });
     } else if (s.type === 'photo') {
       const lines = s.lines ?? [];
