@@ -89,8 +89,8 @@ def next_post() -> Path | None:
     return matches[0] if matches else None
 
 
-def wait_ready(container_id: str, tok: str) -> None:
-    for _ in range(30):
+def wait_ready(container_id: str, tok: str, tries: int = 30) -> None:
+    for _ in range(tries):
         st = call("GET", f"{GRAPH}/{container_id}", {"fields": "status_code", "access_token": tok}).get("status_code")
         if st == "FINISHED":
             return
@@ -118,6 +118,8 @@ def publish() -> None:
         for u in urls:
             print("  이미지:", u)
         print("  캡션 첫 줄:", caption.splitlines()[0])
+        if (post_dir / "reel.mp4").exists():
+            print("  릴스:", f"{os.environ.get('REEL_BASE_URL', '').rstrip('/')}/{urllib.parse.quote(rel)}/reel.mp4")
         print("DRY_RUN: 실제로 올리지 않았어요.")
         return
 
@@ -139,9 +141,28 @@ def publish() -> None:
     wait_ready(cid, tok)
     media_id = call("POST", f"{GRAPH}/{uid}/media_publish", {"creation_id": cid, "access_token": tok})["id"]
     print(f"✓ 게시 완료 (media id {media_id})")
+    post["published"] = {"media_id": media_id, "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+
+    # 같은 카드로 만든 릴스(reel.mp4)가 있으면 릴스 탭에도 올린다 (격자에는 안 나오게 share_to_feed=false).
+    # 영상은 GitHub Pages 주소(REEL_BASE_URL)에서 가져간다. 실패해도 카드 게시물은 그대로 둔다.
+    reel_base = os.environ.get("REEL_BASE_URL", "").rstrip("/")
+    if (post_dir / "reel.mp4").exists() and reel_base:
+        try:
+            video = f"{reel_base}/{urllib.parse.quote(rel)}/reel.mp4"
+            print("릴스 올리는 중:", video)
+            rid = call("POST", f"{GRAPH}/{uid}/media", {
+                "media_type": "REELS", "video_url": video, "caption": caption,
+                "share_to_feed": "false", "access_token": tok,
+            })["id"]
+            wait_ready(rid, tok, tries=60)
+            reel_id = call("POST", f"{GRAPH}/{uid}/media_publish", {"creation_id": rid, "access_token": tok})["id"]
+            print(f"✓ 릴스 게시 완료 (media id {reel_id})")
+            post["published"]["reel_id"] = reel_id
+        except (SystemExit, Exception) as e:  # noqa: BLE001
+            print(f"⚠️ 릴스는 실패했어요 (카드 게시물은 올라갔어요): {e}")
+            post["published"]["reel_error"] = str(e)[:300]
 
     POSTED.mkdir(exist_ok=True)
-    post["published"] = {"media_id": media_id, "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     (post_dir / "post.json").write_text(json.dumps(post, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     dest = POSTED / post_dir.name
     if dest.exists():  # 같은 게시물을 다시 올린 경우 덮어쓰지 않게 이름에 시각을 붙인다

@@ -80,6 +80,7 @@ jobs:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           IG_USER_ID: ${{ vars.IG_USER_ID }}
           GRAPH_BASE: ${{ vars.GRAPH_BASE }}
+          REEL_BASE_URL: https://gmldud0.github.io/office
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
           FORCE_NEXT: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
         run: python3 instagram/publish.py publish
