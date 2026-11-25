@@ -11,9 +11,9 @@
       "slides": [
         {
           "type": "cover",
-          "kicker": "직접 만듦",
-          "title": "짐 쌀 때마다\n**뭐 빠뜨리는**\n사람? 🙋",
-          "sub": "그래서 준비물 체크리스트 앱을\n직접 만들었어요"
+          "kicker": "직접 만든 무료 앱",
+          "title": "짐 쌀 때\n**맨날 빠뜨림**",
+          "src": "assets/changimi/home.png"
         },
         {
           "type": "list",
