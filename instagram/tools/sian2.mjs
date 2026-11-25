@@ -67,20 +67,47 @@ const slides = [
    </div>`,
 ];
 
-// 2~4. 공감 카드: 위는 큰 그림(사진 대신), 아래는 이름표 + 흰 말풍선 + 검은 띠 설명
+// 2~4. 공감 카드: 위는 "장면"(배경 + 여러 그림을 겹쳐 상황이 보이게), 아래는 이름표 + 흰 말풍선 + 검은 띠 설명
+const E = (e, x, y, size, rot = 0, extra = '') =>
+  `<div class="emo" style="left:${x}px;top:${y}px;font-size:${size}px;transform:rotate(${rot}deg);${extra}">${e}</div>`;
+const scenes = {
+  // 주방: 타일 벽 + 나무 조리대, 요리사 + 프라이팬(불) + 라면 + 계란 + 땀
+  cook: `<div style="position:absolute;inset:0 0 auto 0;height:900px;background-color:#e8f6f3;background-image:linear-gradient(#c9e6e0 4px,transparent 4px),linear-gradient(90deg,#c9e6e0 4px,transparent 4px);background-size:120px 90px"></div>
+    <div style="position:absolute;left:0;right:0;top:640px;height:260px;background:linear-gradient(#c98b55,#a86a3a);border-top:14px solid #e0a873"></div>
+    ${E('🧑‍🍳', 90, 170, 400, -4)}
+    ${E('🔥', 610, 520, 150)}${E('🍳', 560, 400, 230, 8)}
+    ${E('🍜', 800, 540, 170)}${E('🥚', 470, 560, 110, -20)}${E('🥚', 900, 400, 90, 15)}
+    ${E('💦', 410, 160, 110, 10)}${E('✨', 820, 200, 120)}
+    <div style="position:absolute;left:640px;top:250px;background:#fff;border:6px solid #3b2a20;border-radius:30px;padding:10px 26px;font:56px Jua;color:#3b2a20;transform:rotate(6deg)">셰프 데뷔?!</div>`,
+  // 빨래: 빨랫줄에 걸린 옷 + 쌓인 빨래 바구니 + 거품 + 지친 얼굴
+  laundry: `<div style="position:absolute;inset:0 0 auto 0;height:900px;background:radial-gradient(circle at 50% 30%,#eaf5ff 0,#bfe0ff 80%)"></div>
+    <svg style="position:absolute;left:0;top:120px" width="1080" height="200"><path d="M-20 40 Q 540 170 1100 40" stroke="#6b7a8f" stroke-width="8" fill="none"/></svg>
+    ${E('👕', 90, 150, 170, -8)}${E('🧦', 330, 205, 130, 6)}${E('👖', 520, 210, 170, 0)}${E('🧦', 740, 190, 120, -10)}${E('👚', 880, 140, 150, 8)}
+    ${E('🧺', 120, 470, 330)}${E('👕', 170, 410, 140, -25)}${E('🧦', 330, 420, 110, 20)}
+    ${E('😵‍💫', 620, 450, 300)}
+    ${E('🫧', 520, 380, 90)}${E('🫧', 940, 420, 110)}${E('🫧', 880, 640, 80)}
+    <div style="position:absolute;left:560px;top:360px;background:#fff;border:6px solid #3b2a20;border-radius:30px;padding:10px 26px;font:56px Jua;color:#3b2a20;transform:rotate(-5deg)">빨래 산 실화?</div>`,
+  // 배달: 밤 방 + 창문 달 + 휴대폰 + 배달 오토바이 + 치킨·피자
+  delivery: `<div style="position:absolute;inset:0 0 auto 0;height:900px;background:linear-gradient(#2a2350,#4b3b8f)"></div>
+    <div style="position:absolute;left:640px;top:120px;width:340px;height:300px;background:#1b1640;border:14px solid #c9b8ff;border-radius:16px"></div>
+    ${E('🌙', 720, 150, 160)}${E('⭐', 900, 330, 50)}
+    ${E('🛵', 560, 420, 300, -6)}${E('💨', 880, 520, 120)}
+    ${E('📱', 90, 200, 300, -12)}${E('😋', 300, 470, 260)}
+    ${E('🍗', 90, 560, 170, 10)}${E('🍕', 520, 160, 120, 20)}${E('🧾', 380, 150, 120, -8)}
+    <div style="position:absolute;left:120px;top:100px;background:#ffeb3b;border:6px solid #3b2a20;border-radius:30px;padding:10px 26px;font:56px Jua;color:#3b2a20;transform:rotate(-6deg)">주문 완료!</div>`,
+};
 const relate = [
-  ['🍳', '#ffd9c2', '요리', '나는 요리를 잘한다고 생각함', ['라면에 계란 넣으면 요리라고 믿음', '설거지는 내일의 내가 함']],
-  ['🧺', '#d6ecff', '빨래', '나는 빨래를 자주 한다고 생각함', ['건조대에서 바로 꺼내 입는 게 국룰', '양말 짝은 원래 안 맞음']],
-  ['💸', '#e6f7d9', '배달', '나는 배달을 줄였다고 생각함', ['최소 주문 금액 맞추다 2인분 시킴', '"이번 주만"이 4주째']],
+  ['cook', '요리', '나는 요리를 잘한다고 생각함', ['라면에 계란 넣으면 요리라고 믿음', '설거지는 내일의 내가 함']],
+  ['laundry', '빨래', '나는 빨래를 자주 한다고 생각함', ['건조대에서 바로 꺼내 입는 게 국룰', '양말 짝은 원래 안 맞음']],
+  ['delivery', '배달', '나는 배달을 줄였다고 생각함', ['최소 주문 금액 맞추다 2인분 시킴', '"이번 주만"이 4주째']],
 ];
-for (const [e, bg, name, pill, lines] of relate) {
-  slides.push(`<style>body{background:${bg}}</style>${logo}
-    <div class="emo" style="font-size:520px;left:50%;top:120px;transform:translateX(-50%)">${e}</div>
-    <div style="position:absolute;left:0;right:0;bottom:0;height:520px;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.85) 45%)"></div>
+for (const [scene, name, pill, lines] of relate) {
+  slides.push(`<style>body{background:#111}</style>${scenes[scene]}${logo}
+    <div style="position:absolute;left:0;right:0;top:820px;height:120px;background:linear-gradient(rgba(17,17,17,0),#111)"></div>
     <div style="position:absolute;left:0;right:0;bottom:60px;text-align:center">
-      <div style="display:inline-block;transform:rotate(-2deg)">${sticker(name, 130, { font: 'BHS', fill: '#3b2a20', stroke: '#fff', outer: '#fff', drop: '#7ec8e3' })}</div>
-      <div style="margin:26px 70px 30px;background:#fff;border-radius:999px;padding:22px 30px;font:58px Gaegu;font-weight:700;color:#3b2a20">${esc(pill)}</div>
-      ${lines.map((l) => `<div style="font:54px/1.45 Gaegu;font-weight:700;color:#fff">${esc(l)}</div>`).join('')}
+      <div style="display:inline-block;transform:rotate(-3deg)">${sticker(name, 150, { font: 'BHS', fill: '#3b2a20', stroke: '#fff', outer: '#fff', drop: '#7ec8e3' })}</div>
+      <div style="margin:24px 70px 28px;background:#fff;border-radius:999px;padding:20px 30px;font:60px Jua;color:#3b2a20">${esc(pill)}</div>
+      ${lines.map((l) => `<div style="font:56px/1.45 Jua;color:#fff">${esc(l)}</div>`).join('')}
     </div>`);
 }
 
@@ -88,12 +115,12 @@ for (const [e, bg, name, pill, lines] of relate) {
 slides.push(`<style>body{background:#1b1b1b}</style>
   <div class="grid" style="position:absolute;inset:60px 50px;border-radius:60px;padding:80px 60px">
     <div style="text-align:center;margin-bottom:40px">${sticker('착각 탈출 꿀팁', 110, { font: 'BHS', fill: '#1b1b1b', stroke: '#fff', outer: '#fff', drop: '#bdbdbd' })}</div>
-    <div style="text-align:center;font:60px/1.5 Gaegu;font-weight:700;color:#1b1b1b;margin-bottom:46px">
+    <div style="text-align:center;font:60px/1.5 Jua;color:#1b1b1b;margin-bottom:46px">
       배달비만 아껴도 한 달에
       <span style="position:relative;display:inline-block;padding:0 14px">약 6만 원<svg style="position:absolute;left:-14px;top:-10px;width:calc(100% + 28px);height:calc(100% + 20px)" viewBox="0 0 200 80" preserveAspectRatio="none"><path d="M10 45 C 10 10, 190 5, 192 40 S 40 82, 18 52" fill="none" stroke="#e53935" stroke-width="7" stroke-linecap="round"/></svg></span>
     </div>
     ${['1. 장보기 전 냉장고 사진 찍기', '2. 빨래는 요일 정해서 한 번에', '3. 배달은 주 1회로 약속'].map((t) =>
-      `<div style="background:#fff6b3;border:5px dotted #1b1b1b;border-radius:10px;padding:26px 20px;margin:0 10px 26px;text-align:center;font:56px Gaegu;font-weight:700;color:#1b1b1b">${t}</div>`).join('')}
+      `<div style="background:#fff6b3;border:5px dotted #1b1b1b;border-radius:10px;padding:26px 20px;margin:0 10px 26px;text-align:center;font:56px Jua;color:#1b1b1b">${t}</div>`).join('')}
     <div style="text-align:center;margin-top:20px">${sticker('다음 장에 계속 ▶', 64, { font: 'Jua', fill: '#1b1b1b', stroke: '#fff', outer: '#fff', drop: '#bdbdbd' })}</div>
     <div style="position:absolute;right:40px;bottom:30px;font:22px Jua;color:#999">※ 예시용 숫자(배달비 3천 원 × 주 5회 × 4주)</div>
   </div>`);
