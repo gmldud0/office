@@ -52,8 +52,8 @@ function scenes(post, col) {
         : `<div class="burst"></div><div class="emo in pop" style="--d:.1s;font-size:420px;top:300px">${esc((s.emoji ?? ['✨'])[0])}</div>`;
       out.push({ dur: dur(plain(s.title).length + 6, 0.6), html: `${visual}
         <div class="center" style="top:${s.src ? 900 : 860}px">
-          ${s.kicker ? `<div class="kick in" style="--d:.2s">${esc(s.kicker)}</div>` : ''}
-          ${lines.map((l, i) => `<div class="big in pop" style="--d:${0.5 + i * 0.45}s;${i === lines.length - 1 || /\*\*/.test(l) ? `color:${col.hl}` : ''}">${esc(plain(l))}</div>`).join('')}
+          ${s.kicker ? `<div class="kick in" style="--d:.2s">${esc(s.kicker)}</div><br>` : ''}
+          ${lines.map((l, i) => `<div class="big in pop${i === lines.length - 1 || /\*\*/.test(l) ? ' hl' : ''}" style="--d:${0.5 + i * 0.45}s">${esc(plain(l))}</div><br>`).join('')}
         </div>`, header: false });
     } else if (s.type === 'photo') {
       const lines = s.lines ?? [];
@@ -104,9 +104,9 @@ function page(sc, title, col, t0, tEnd, idx, total) {
   *{margin:0;box-sizing:border-box}
   html,body{width:${W}px;height:${H}px;overflow:hidden}
   body{position:relative;font-family:Jua,sans-serif;background:${col.a};color:#1b1b1b}
-  .burst{position:absolute;inset:0;background:repeating-conic-gradient(from 0deg at 50% 40%, ${col.a} 0deg 4deg, ${col.b} 4deg 9deg)}
+  .burst{position:absolute;inset:0;background-color:${col.a};background-image:radial-gradient(${col.b} 7px, transparent 8px);background-size:52px 52px}
   .glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,#fff 0,rgba(255,255,255,0) 45%)}
-  .soft{position:absolute;inset:0;background:linear-gradient(${col.a},#fff 60%)}
+  .soft{position:absolute;inset:0;background-color:${col.a};background-image:radial-gradient(${col.b} 7px, transparent 8px);background-size:52px 52px}
   .kb{position:absolute;inset:-4%;background:center/cover;animation:kb ${tEnd}s linear both}
   @keyframes kb{from{transform:scale(1.0)}to{transform:scale(1.12)}}
   .dim{position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.05) 30%,rgba(0,0,0,.75) 70%)}
@@ -120,13 +120,16 @@ function page(sc, title, col, t0, tEnd, idx, total) {
   @keyframes rise{from{opacity:0;transform:translate(-50%,160px)}to{opacity:1;transform:translate(-50%,0)}}
   .emo{position:absolute;left:0;right:0;text-align:center;font-family:'Noto Color Emoji';line-height:1}
   .kick{display:inline-block;background:${col.ink};color:#fff;font-size:52px;padding:14px 38px;border-radius:999px;margin-bottom:24px}
-  .big{font-family:BHS;font-size:150px;line-height:1.16;color:#fff;text-shadow:${ring(10, col.ink)},${ring(20, '#fff', 4).split(',').slice(-60).join(',')},0 22px 0 rgba(0,0,0,.3)}
-  .mid{font-family:BHS;font-size:100px;line-height:1.18;margin-bottom:30px;color:#1b1b1b}
-  .sub{font-size:58px;line-height:1.5;margin-bottom:40px;color:#333}
-  .item{background:#fff6b3;border:6px dotted #1b1b1b;border-radius:16px;padding:28px 26px;margin:0 0 28px;font-size:56px;line-height:1.35}
+  .big{display:inline-block;font-family:BHS;font-size:130px;line-height:1.1;color:#fff;background:${col.ink};padding:.12em .4em .18em;margin:10px 0;clip-path:polygon(0 8%,2% 0,98% 0,100% 8%,100% 92%,98% 100%,2% 100%,0 92%)}
+  .big.hl{background:${col.hl};color:${col.ink}}
+  .mid{display:inline-block;font-family:BHS;font-size:96px;line-height:1.18;margin-bottom:30px;color:#fff;background:${col.ink};padding:.08em .4em .14em}
+  .mid b{color:${col.hl} !important}
+  .sub{font-size:56px;line-height:1.5;margin-bottom:40px;color:#1b1b1b;background:#fffdf7;padding:20px 28px;border-radius:20px}
+  .item{background:#fffdf7;border-bottom:5px dashed #cfcac0;padding:30px 30px;margin:0;font-size:56px;line-height:1.35;text-align:left}
+  .item:first-of-type{border-radius:20px 20px 0 0}
   .note{font-size:38px;color:#777;margin-top:10px}
   .num{display:inline-block;background:${col.ink};color:#fff;font-size:44px;padding:10px 30px;border-radius:999px;margin-bottom:24px}
-  .label{display:inline-block;font-family:BHS;font-size:130px;color:${col.ink};background:#fff;padding:6px 44px;border-radius:30px;transform:rotate(-3deg);box-shadow:0 10px 0 ${col.drop}}
+  .label{display:inline-block;font-family:BHS;font-size:120px;color:${col.ink};background:${col.hl};padding:.1em .45em .16em;transform:rotate(-2deg);clip-path:polygon(0 8%,2% 0,98% 0,100% 8%,100% 92%,98% 100%,2% 100%,0 92%)}
   .pill{margin:40px 0 34px;background:#fff;border-radius:999px;padding:24px 30px;font-size:60px;color:#3b2a20}
   .line{font-size:60px;line-height:1.5;color:#fff;margin-bottom:10px}
   .phone{position:absolute;left:50%;bottom:120px;height:1000px;transform:translateX(-50%);border-radius:50px;border:12px solid #1b1b1b;box-shadow:0 30px 70px rgba(0,0,0,.25)}
