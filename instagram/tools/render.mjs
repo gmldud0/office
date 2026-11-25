@@ -42,7 +42,7 @@ const STICKERS = [
   { bg: 'radial-gradient(circle at 50% 35%,#2f3f66 0,#1F2A44 70%)', fill: '#FFFFFF', hl: 'linear-gradient(#FFE08A,#FF9A3D)', stroke: '#0E1426', outer: '#FF7A59', kick: '#FF7A59', popBg: '#FF7A59', popHl: 'linear-gradient(#FFF27A,#FFD400)' },
   { bg: 'repeating-linear-gradient(45deg,#FFDF5E 0 60px,#FFD84D 60px 120px)', fill: '#FFFFFF', hl: 'linear-gradient(#8DB5FF,#2F5BEA)', stroke: '#1B1B1B', outer: '#1B1B1B', kick: '#2F5BEA', popBg: '#2F5BEA', popHl: 'linear-gradient(#FFF27A,#FFD400)' },
   { bg: 'radial-gradient(circle at 50% 30%,#7a6cf0 0,#5B4BDB 70%)', fill: '#FFFFFF', hl: 'linear-gradient(#FFE0EE,#FF7AB6)', stroke: '#26205A', outer: '#FFFFFF', kick: '#FF7AB6', popBg: '#FF7AB6', popHl: 'linear-gradient(#FFF27A,#FFD400)' },
-  { bg: '#141414', fill: '#FFFFFF', hl: 'linear-gradient(#EFFF8A,#A5E000)', stroke: '#141414', outer: '#FFFFFF', kick: '#4D7C0F', popBg: '#C6F432', popHl: 'linear-gradient(#FFFFFF,#FFFFFF)' },
+  { bg: '#141414', fill: '#FFFFFF', hl: 'linear-gradient(#EFFF8A,#A5E000)', stroke: '#141414', outer: '#FFFFFF', kick: '#4D7C0F', popBg: '#C6F432', popHl: 'linear-gradient(#8B7BFF,#5B4BDB)' },
 ];
 
 // 둥근 스티커 테두리: text-shadow를 원 모양으로 여러 겹 깔아 만든다.
@@ -75,7 +75,21 @@ const EMOJI_SPOTS = [
   'left:80px;bottom:200px;transform:rotate(8deg)', 'right:80px;bottom:190px;transform:rotate(-8deg)',
 ];
 function stickerCover(slide, n, c0) {
-  const st = slide.style ?? 'clean';
+  const st = slide.style ?? 'big';
+  if (st === 'big') {
+    // big: 위쪽 절반에 큰 그림(이모지 여러 개), 아래쪽에 굵은 테두리 글씨. 참고: 정보 계정들의 "사진+큰 글씨" 표지
+    const c = { ...c0, fill: '#FFFFFF', hl: c0.popHl, stroke: '#141414', outer: '#FFFFFF' };
+    const lines = String(slide.title).split('\n');
+    const w = (l) => [...l.replace(/\*\*/g, '')].reduce((a, ch) => a + (ch === ' ' ? 0.4 : /[A-Za-z0-9]/.test(ch) ? 0.62 : 1), 0);
+    const size = Math.min(230, Math.floor(960 / Math.max(Math.max(...lines.map(w)), 3)));
+    const em = slide.emoji ?? [];
+    const art = slide.src
+      ? `<img class="bigimg" src="${pathToFileURL(path.resolve(here, '..', slide.src)).href}">`
+      : `<div class="art">${em[0] ? `<span class="e0">${esc(em[0])}</span>` : ''}${em.slice(1, 4).map((e, i) => `<span class="e e${i + 1}">${esc(e)}</span>`).join('')}</div>`;
+    const kick = slide.kicker ? stickerLine(slide.kicker, 64, 'BHS', { ...c, fill: '#141414', hl: '#141414', stroke: '#FFFFFF', outer: '#FFFFFF' }, '#141414') : '';
+    return `<style>body{background:${c0.popBg} !important}</style>${art}
+      <div class="btxt">${kick}${lines.map((l) => stickerLine(l, size, 'BHS', c)).join('')}</div>`;
+  }
   // clean: 테두리 한 겹, 이모지 하나 크게, 작은 말머리 / pop: 강조색 배경 / sticker: 처음 시안(두 겹 테두리, 이모지 4개)
   const c = st === 'sticker' ? c0 : st === 'pop'
     ? { ...c0, bg: c0.popBg, fill: '#FFFFFF', hl: c0.popHl, stroke: '#141414', outer: '#141414' }
@@ -196,6 +210,15 @@ function slideHtml(slide, i, total, brand, t, c) {
   .l { display: block; letter-spacing: -2px; }
   .l.o { filter: drop-shadow(0 14px 0 rgba(0,0,0,.22)); }
   .l + .l { position: absolute; inset: 0; }
+  .art { position: absolute; left: 0; right: 0; top: 0; height: 760px; background: radial-gradient(circle at 50% 55%, rgba(255,255,255,.55) 0, rgba(255,255,255,0) 62%); }
+  .art span { position: absolute; font-family: 'Noto Color Emoji'; line-height: 1; filter: drop-shadow(0 18px 0 rgba(0,0,0,.18)); }
+  .art .e0 { font-size: 400px; left: 50%; top: 170px; transform: translateX(-50%); }
+  .art .e1 { font-size: 170px; left: 70px; top: 150px; transform: rotate(-14deg); }
+  .art .e2 { font-size: 170px; right: 70px; top: 190px; transform: rotate(12deg); }
+  .art .e3 { font-size: 140px; right: 140px; top: 520px; transform: rotate(-8deg); }
+  .bigimg { position: absolute; left: 50%; top: 110px; height: 640px; transform: translateX(-50%) rotate(-3deg); border-radius: 40px; border: 10px solid #fff; box-shadow: 0 30px 60px rgba(0,0,0,.25); }
+  .btxt { position: absolute; left: 0; right: 0; bottom: 110px; text-align: center; }
+  .btxt .ln:first-child { margin-bottom: 6px; }
   .emo1 { font-family: 'Noto Color Emoji'; font-size: 190px; line-height: 1; margin-bottom: 30px; filter: drop-shadow(0 10px 0 rgba(0,0,0,.2)); }
   .pill { display: inline-block; font-size: 44px; font-weight: 900; padding: 14px 34px; border-radius: 999px; margin-bottom: 26px; }
   .csub { margin-top: 40px; font-size: 46px; font-weight: 700; opacity: .9; }
