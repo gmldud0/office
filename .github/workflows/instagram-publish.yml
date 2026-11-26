@@ -80,8 +80,8 @@ jobs:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           IG_USER_ID: ${{ vars.IG_USER_ID }}
           GRAPH_BASE: ${{ vars.GRAPH_BASE }}
-          # 릴스도 함께 올린다 (사용자 선택 3번: 격자에 보이면 사용자가 앱에서 직접 숨김). 끄려면 아래 줄 앞에 # 를 붙이기
-          REEL_BASE_URL: https://gmldud0.github.io/office
+          # 릴스 자동 게시: 2026-11-26 인스타 활동 제한 이후 천천히 다시 시작하는 중이라 잠시 끔. 다시 켜려면 아래 줄 앞의 # 제거
+          # REEL_BASE_URL: https://gmldud0.github.io/office
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
           FORCE_NEXT: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
         run: python3 instagram/publish.py publish
