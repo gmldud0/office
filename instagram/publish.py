@@ -89,14 +89,16 @@ def next_post() -> Path | None:
     return matches[0] if matches else None
 
 
-def wait_ready(container_id: str, tok: str, tries: int = 30) -> None:
+def wait_ready(container_id: str, tok: str, tries: int = 18) -> None:
+    # API 호출 수를 줄이려고 처음 한 번 기다린 뒤 10초 간격으로만 확인한다 (호출 한도·차단 예방)
+    time.sleep(3)
     for _ in range(tries):
         st = call("GET", f"{GRAPH}/{container_id}", {"fields": "status_code", "access_token": tok}).get("status_code")
         if st == "FINISHED":
             return
         if st in ("ERROR", "EXPIRED"):
             sys.exit(f"이미지 처리 실패 ({container_id}: {st}). 이미지 주소가 공개돼 있는지 확인해 주세요.")
-        time.sleep(5)
+        time.sleep(10)
     sys.exit(f"이미지 처리가 너무 오래 걸려요 ({container_id}).")
 
 
@@ -130,11 +132,13 @@ def publish() -> None:
     if len(urls) == 1:
         cid = call("POST", f"{GRAPH}/{uid}/media", {"image_url": urls[0], "caption": caption, "access_token": tok})["id"]
     else:
+        # 카드를 먼저 모두 등록하고(호출 10번), 한 장씩 천천히 준비됐는지 확인한다
         children = []
         for u in urls:
-            c = call("POST", f"{GRAPH}/{uid}/media", {"image_url": u, "is_carousel_item": "true", "access_token": tok})["id"]
+            children.append(call("POST", f"{GRAPH}/{uid}/media", {"image_url": u, "is_carousel_item": "true", "access_token": tok})["id"])
+            time.sleep(2)
+        for c in children:
             wait_ready(c, tok)
-            children.append(c)
         cid = call("POST", f"{GRAPH}/{uid}/media", {
             "media_type": "CAROUSEL", "children": ",".join(children), "caption": caption, "access_token": tok,
         })["id"]
