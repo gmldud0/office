@@ -53,5 +53,16 @@
     "foreign_landing_url": "https://www.flickr.com/photos/11018968@N00/6718077777",
     "provider": "flickr",
     "attribution": "\"Humidifier\" by Editor B is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/."
+  },
+  "xmas-market": {
+    "id": "0fd4f8bc-242f-42aa-a565-564aabd679a9",
+    "title": "Christmas market in Stockholm Old Town",
+    "creator": "Michael Cavén",
+    "license": "by",
+    "license_version": "2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0/",
+    "foreign_landing_url": "https://www.flickr.com/photos/29241649@N02/4206886224",
+    "provider": "flickr",
+    "attribution": "\"Christmas market in Stockholm Old Town\" by Michael Cavén is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/."
   }
 }
